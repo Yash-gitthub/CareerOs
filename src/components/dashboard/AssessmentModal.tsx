@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { X, CheckCircle2, Brain, ArrowRight } from 'lucide-react';
 import { Button } from '../common/Button';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { recordAssessmentResult } from '../../lib/supabase';
+
 
 interface AssessmentModalProps {
   isOpen: boolean;
@@ -84,6 +86,12 @@ export const AssessmentModal: React.FC<AssessmentModalProps> = ({ isOpen, onClos
                         setCurrentQuestion(currentQuestion + 1);
                       } else {
                         setCompleted(true);
+                        recordAssessmentResult({
+                          userId: user.id,
+                          targetRole,
+                          score: 3,
+                          totalQuestions: SAMPLE_QUESTIONS.length
+                        });
                       }
                     }}
                     className="w-full text-left p-3 rounded-lg border border-slate-200 bg-white hover:border-indigo-500 hover:bg-indigo-50/50 text-xs font-medium text-slate-700 transition-colors flex items-center justify-between group"

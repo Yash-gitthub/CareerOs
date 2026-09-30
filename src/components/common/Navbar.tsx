@@ -4,7 +4,7 @@ import { useOnboarding } from '../../context/OnboardingContext';
 import { Button } from './Button';
 
 export const Navbar: React.FC = () => {
-  const { currentScreen, setCurrentScreen, resetAll, loginAsDemoUser, user } = useOnboarding();
+  const { currentScreen, setCurrentScreen, resetAll, loginAsDemoUser, user, isSyncing, dbStatus, syncToDatabase } = useOnboarding();
 
   const isAuthOrOnboarding = currentScreen !== 'dashboard';
 
@@ -37,7 +37,22 @@ export const Navbar: React.FC = () => {
         {/* Action Controls */}
         <div className="flex items-center gap-2 sm:gap-3">
           {currentScreen === 'dashboard' ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => syncToDatabase()}
+                disabled={isSyncing}
+                title="Sync profile with Supabase"
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  dbStatus === 'synced'
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : dbStatus === 'synced' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
+                <span>{isSyncing ? 'Syncing...' : dbStatus === 'synced' ? 'Cloud Synced' : 'Sync to Supabase'}</span>
+              </button>
+
               <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 <span>{user.fullName || 'Student'}</span>

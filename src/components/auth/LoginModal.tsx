@@ -5,13 +5,13 @@ import { FormField } from '../common/FormField';
 import { Button } from '../common/Button';
 
 export const LoginModal: React.FC = () => {
-  const { setCurrentScreen, loginAsDemoUser } = useOnboarding();
+  const { setCurrentScreen, loginAsDemoUser, loginWithEmail } = useOnboarding();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password) {
       setError('Please provide both your email address and password.');
@@ -21,12 +21,13 @@ export const LoginModal: React.FC = () => {
     setIsLoading(true);
     setError('');
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false);
-      loginAsDemoUser();
-    }, 600);
+    const res = await loginWithEmail(email.trim(), password);
+    setIsLoading(false);
+    if (!res.success) {
+      setError(res.error || 'Failed to sign in. Please verify your credentials or use Demo Sign-in.');
+    }
   };
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 max-w-md mx-auto">

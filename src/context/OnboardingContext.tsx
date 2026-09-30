@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { UserProfile, OnboardingScreen, SelectedSkill, SkillProficiency } from '../types/user';
+import { syncProfileToSupabase, fetchProfileFromSupabase } from '../lib/supabase';
+
 
 const STORAGE_KEY = 'ai_careeros_user_profile';
 const SCREEN_KEY = 'ai_careeros_active_screen';
@@ -86,6 +88,10 @@ interface OnboardingContextType {
   resetAll: () => void;
   completeOnboarding: () => void;
   loginAsDemoUser: () => void;
+  loginWithEmail: (email: string, password?: string) => Promise<{ success: boolean; error?: string }>;
+  syncToDatabase: (overrideUser?: UserProfile) => Promise<boolean>;
+  isSyncing: boolean;
+  dbStatus: 'synced' | 'unsynced' | 'connecting';
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
@@ -116,6 +122,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   });
 
   const [errors, setErrors] = useState<ValidationErrors>({});
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [dbStatus, setDbStatus] = useState<'synced' | 'unsynced' | 'connecting'>('unsynced');
 
   // Sync with local storage
   useEffect(() => {
@@ -395,17 +403,69 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     setErrors({});
   };
 
+  const syncToDatabase = useCallback(async (overrideUser?: UserProfile): Promise<boolean> => {
+    const profileToSync = overrideUser || user;
+    if (!profileToSync.email && !profileToSync.fullName) return false;
+    setIsSyncing(true);
+    try {
+      const res = await syncProfileToSupabase(profileToSync);
+      if (res.success) {
+        setDbStatus('synced');
+        return true;
+      } else {
+        setDbStatus('unsynced');
+        return false;
+      }
+    } catch {
+      setDbStatus('unsynced');
+      return false;
+    } finally {
+      setIsSyncing(false);
+    }
+  }, [user]);
+
+  const loginWithEmail = async (email: string, _password?: string): Promise<{ success: boolean; error?: string }> => {
+    setIsSyncing(true);
+    try {
+      const fetched = await fetchProfileFromSupabase(email);
+      if (fetched) {
+        setUser(fetched);
+        setCurrentScreen('dashboard');
+        setDbStatus('synced');
+        return { success: true };
+      }
+
+      if (user.email && user.email.toLowerCase() === email.toLowerCase()) {
+        setCurrentScreen('dashboard');
+        return { success: true };
+      }
+
+      return {
+        success: false,
+        error: 'No account found with this email. Please complete the quick student onboarding to register, or use Demo Sign-in.'
+      };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message };
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const completeOnboarding = () => {
-    setUser(prev => ({
-      ...prev,
+    const updatedUser: UserProfile = {
+      ...user,
       careerTwin: {
-        ...prev.careerTwin,
+        ...user.careerTwin,
         status: 'ready',
         lastUpdated: new Date().toISOString()
       }
-    }));
+    };
+    setUser(updatedUser);
     setCurrentScreen('dashboard');
+    syncToDatabase(updatedUser);
   };
+
 
   const loginAsDemoUser = () => {
     setUser({
@@ -505,7 +565,11 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         goToStep,
         resetAll,
         completeOnboarding,
-        loginAsDemoUser
+        loginAsDemoUser,
+        loginWithEmail,
+        syncToDatabase,
+        isSyncing,
+        dbStatus
       }}
     >
       {children}

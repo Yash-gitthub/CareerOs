@@ -5,21 +5,34 @@ import { FormField } from '../common/FormField';
 import { Button } from '../common/Button';
 import { SearchableSelect } from '../common/SearchableSelect';
 import { POPULAR_COLLEGES } from '../../data/colleges';
+import { submitMentorRegistration } from '../../lib/supabase';
 
 export const MentorPlacementRegister: React.FC = () => {
   const { user, setCurrentScreen } = useOnboarding();
   const isMentor = user.role === 'mentor';
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [institution, setInstitution] = useState('');
   const [designation, setDesignation] = useState('');
   const [phone, setPhone] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    await submitMentorRegistration({
+      name,
+      email,
+      role: isMentor ? 'mentor' : 'placement_officer',
+      institution,
+      designation,
+      phone,
+    });
+    setIsSubmitting(false);
     setSubmitted(true);
   };
+
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 max-w-xl mx-auto">
@@ -132,6 +145,7 @@ export const MentorPlacementRegister: React.FC = () => {
               <Button
                 type="submit"
                 variant="primary"
+                isLoading={isSubmitting}
                 className="px-6 py-2.5"
               >
                 Request Portal Access
