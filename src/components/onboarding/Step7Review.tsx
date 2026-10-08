@@ -3,6 +3,7 @@ import { GraduationCap, Code2, Compass, Building, Clock, Edit3 } from 'lucide-re
 import { useOnboarding } from '../../context/OnboardingContext';
 import { StepHeader } from '../common/StepHeader';
 import { StepNavigation } from '../common/StepNavigation';
+import { GitHubCard, LeetCodeCard } from '../dashboard/integrations/IntegrationCards';
 import { ProgressBar } from '../common/ProgressBar';
 import { Button } from '../common/Button';
 
@@ -205,6 +206,18 @@ export const Step7Review: React.FC = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Coding profiles (optional) — feed the Career Twin from day one */}
+        <div className="space-y-3">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900">Connect your coding profiles <span className="text-xs font-normal text-slate-500">(optional)</span></h4>
+            <p className="text-xs text-slate-500">Public GitHub and LeetCode data calibrates your Career Twin. You can also do this later from the dashboard.</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <GitHubCard />
+            <LeetCodeCard />
+          </div>
         </div>
 
         {/* Confirmation Question */}

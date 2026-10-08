@@ -2,6 +2,9 @@
 -- AI CareerOS - Supabase Database Schema
 -- Run this script in your Supabase Project's SQL Editor:
 -- https://supabase.com/dashboard/project/vcjwjidfttfqxdfehbkm/sql
+--
+-- IMPORTANT: always run supabase/migrations/002_core.sql afterwards.
+-- The open "USING (true)" policies below are replaced there by owner-only RLS.
 -- ========================================================
 
 -- 1. Student / User Profiles Table

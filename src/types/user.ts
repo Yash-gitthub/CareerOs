@@ -5,7 +5,9 @@ export type SkillProficiency = 'Beginner' | 'Familiar' | 'Intermediate' | 'Advan
 export interface SelectedSkill {
   name: string;
   category: string;
-  level?: SkillProficiency;
+  level?: SkillProficiency; // what the student claimed
+  verifiedLevel?: SkillProficiency; // what the skill verification test measured
+  verifiedAt?: string;
 }
 
 export interface EducationInfo {
@@ -56,10 +58,17 @@ export interface CareerTwinState {
   lastUpdated: string;
 }
 
+// 'cloud': backed by a Supabase Auth account (id === auth.users.id)
+// 'local': Supabase not configured; data lives only in this browser
+// 'demo':  sandbox session, never synced
+export type AccountType = 'cloud' | 'local' | 'demo';
+
 export interface UserProfile {
   id: string;
+  accountType?: AccountType;
   fullName: string;
   email: string;
+  // Form-only fields. Stripped before persisting anywhere (see sanitizeForStorage).
   password?: string;
   confirmPassword?: string;
   phone: string;

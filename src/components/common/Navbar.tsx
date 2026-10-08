@@ -1,12 +1,14 @@
 import React from 'react';
-import { Compass, LogIn, RefreshCw, UserCheck } from 'lucide-react';
+import { Compass, LogIn, LogOut, RefreshCw, UserCheck } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { Button } from './Button';
+import { NotificationCenter } from './NotificationCenter';
 
 export const Navbar: React.FC = () => {
   const { currentScreen, setCurrentScreen, resetAll, loginAsDemoUser, user, isSyncing, dbStatus, syncToDatabase } = useOnboarding();
 
   const isAuthOrOnboarding = currentScreen !== 'dashboard';
+  const isCloudAccount = user.accountType === 'cloud';
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
@@ -38,6 +40,8 @@ export const Navbar: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-3">
           {currentScreen === 'dashboard' ? (
             <div className="flex items-center gap-2 sm:gap-3">
+              <NotificationCenter />
+              {isCloudAccount ? (
               <button
                 type="button"
                 onClick={() => syncToDatabase()}
@@ -52,6 +56,14 @@ export const Navbar: React.FC = () => {
                 <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : dbStatus === 'synced' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                 <span>{isSyncing ? 'Syncing...' : dbStatus === 'synced' ? 'Cloud Synced' : 'Sync to Supabase'}</span>
               </button>
+              ) : (
+                <span
+                  title="This profile is stored only in this browser"
+                  className="px-2.5 py-1 rounded-lg text-xs font-medium border bg-amber-50 border-amber-200 text-amber-800"
+                >
+                  {user.accountType === 'demo' ? 'Demo sandbox · not synced' : 'Local only · not synced'}
+                </span>
+              )}
 
               <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-lg text-xs font-medium text-slate-700">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -62,17 +74,17 @@ export const Navbar: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={resetAll}
-                leftIcon={<RefreshCw className="w-3.5 h-3.5" />}
+                onClick={() => resetAll()}
+                leftIcon={isCloudAccount ? <LogOut className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
               >
-                Restart Demo
+                {isCloudAccount ? 'Sign out' : 'Restart Demo'}
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={loginAsDemoUser}
+                onClick={() => loginAsDemoUser()}
                 title="Quick demo with filled sample profile"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-indigo-50 rounded-lg transition-colors"
               >

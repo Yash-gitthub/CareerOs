@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Compass, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useOnboarding } from '../../context/OnboardingContext';
+import { useCareer } from '../../store/CareerStore';
 import { Button } from '../common/Button';
 import { clsx } from 'clsx';
 
@@ -13,9 +14,20 @@ const TWIN_BUILD_STEPS = [
 ];
 
 export const CareerTwinSetup: React.FC = () => {
-  const { completeOnboarding } = useOnboarding();
+  const { completeOnboarding, user } = useOnboarding();
+  const { twin } = useCareer();
   const [currentBuildStep, setCurrentBuildStep] = useState(1);
   const [isReady, setIsReady] = useState(false);
+
+  // Real results from the Career Twin engine, shown as each step completes.
+  const skillCount = Object.values(user.skills).reduce((n, l) => n + l.length, 0);
+  const critical = twin.gaps.filter(g => g.bucket === 'critical').length;
+  const results: Record<number, string> = {
+    1: `${user.education.degree.split(' (')[0]} · ${user.education.year.split(' (')[0]} · graduating ${user.education.graduationYear}`,
+    2: `${skillCount} skills mapped · ${twin.skills.length} tracked against your role`,
+    3: `${twin.gaps.length} role requirements for ${twin.career.targetRole} · ${critical} critical gaps`,
+    4: `Starting readiness ${Math.round(twin.readiness.score)}% · features unlock after your skill verification test`,
+  };
 
   useEffect(() => {
     // Step progression animation (total ~3.5 seconds)
@@ -75,7 +87,7 @@ export const CareerTwinSetup: React.FC = () => {
           </h2>
           <p className="text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
             {isReady
-              ? "We'll keep learning about your progress as you use AI CareerOS. Your roadmap will continuously adapt as you complete assessments and projects."
+              ? 'Next, a short skill verification test checks the levels you entered. Your dashboard unlocks once it is done, then features open one at a time as you progress.'
               : 'Synthesizing your academic stage, skill baseline, and career ambitions into an adaptive model.'}
           </p>
         </div>
@@ -135,7 +147,7 @@ export const CareerTwinSetup: React.FC = () => {
                     )}
                   </div>
                   <p className="text-[11px] text-slate-500 truncate">
-                    {step.desc}
+                    {isDone ? results[step.id] : step.desc}
                   </p>
                 </div>
               </div>
@@ -153,7 +165,7 @@ export const CareerTwinSetup: React.FC = () => {
               rightIcon={<ArrowRight className="w-5 h-5" />}
               className="w-full sm:w-auto px-8 py-3 text-base shadow-md shadow-indigo-100"
             >
-              Go to My Dashboard
+              Start Skill Verification Test
             </Button>
           </div>
         )}
