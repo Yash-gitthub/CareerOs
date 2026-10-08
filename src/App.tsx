@@ -14,9 +14,17 @@ import { Step6Preferences } from './components/onboarding/Step6Preferences';
 import { Step7Review } from './components/onboarding/Step7Review';
 import { CareerTwinSetup } from './components/onboarding/CareerTwinSetup';
 import { StudentDashboard } from './components/dashboard/StudentDashboard';
+import { CareerProvider } from './store/CareerStore';
+import { isPreview } from './lib/preview';
 
 const MainRouter: React.FC = () => {
-  const { currentScreen } = useOnboarding();
+  const { currentScreen, authNotice, clearAuthNotice, loginAsDemoUser } = useOnboarding();
+
+  // Dev preview links need a dashboard to show; fall back to the demo profile if there isn't one.
+  React.useEffect(() => {
+    if (isPreview() && currentScreen !== 'dashboard') loginAsDemoUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -54,6 +62,20 @@ const MainRouter: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-indigo-500 selection:text-white">
       <Navbar />
+      {authNotice && (
+        <div role="status" className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
+            <span>{authNotice}</span>
+            <button
+              type="button"
+              onClick={clearAuthNotice}
+              className="shrink-0 font-semibold text-amber-800 hover:text-amber-950 underline"
+            >
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
       <main className="flex-1">
         {renderScreen()}
       </main>
@@ -81,7 +103,9 @@ const MainRouter: React.FC = () => {
 export const App: React.FC = () => {
   return (
     <OnboardingProvider>
-      <MainRouter />
+      <CareerProvider>
+        <MainRouter />
+      </CareerProvider>
     </OnboardingProvider>
   );
 };

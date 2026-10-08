@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, Phone, Camera, Eye, EyeOff } from 'lucide-react';
-import { useOnboarding } from '../../context/OnboardingContext';
+import { useOnboarding, needsPassword } from '../../context/OnboardingContext';
 import { FormField } from '../common/FormField';
 import { PasswordStrength } from '../common/PasswordStrength';
 import { StepHeader } from '../common/StepHeader';
@@ -15,7 +15,9 @@ const AVATAR_PRESETS = [
 ];
 
 export const Step1Profile: React.FC = () => {
-  const { user, updateUser, errors, clearError, nextStep, prevStep } = useOnboarding();
+  const { user, updateUser, errors, clearError, nextStep, prevStep, isAuthenticating } = useOnboarding();
+  const showPasswordFields = needsPassword(user);
+  const accountCreated = user.accountType === 'cloud';
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
@@ -133,12 +135,21 @@ export const Step1Profile: React.FC = () => {
               updateUser({ email: e.target.value });
               clearError('email');
             }}
-            helperText="We'll send career roadmaps and verification updates here."
+            readOnly={accountCreated}
+            helperText={
+              accountCreated
+                ? 'Your account is created with this email.'
+                : showPasswordFields
+                ? "We'll send a confirmation link, career roadmaps and verification updates here."
+                : 'Cloud accounts are not configured — your profile is stored in this browser only.'
+            }
             leftIcon={<Mail className="w-4 h-4" />}
             required
           />
 
-          {/* Password & Confirm Password */}
+          {/* Password & Confirm Password (only when creating a real account) */}
+          {showPasswordFields && (
+          <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <FormField
               label="Password"
@@ -189,6 +200,8 @@ export const Step1Profile: React.FC = () => {
 
           {/* Password Live Strength Checker */}
           <PasswordStrength password={user.password || ''} />
+          </>
+          )}
 
           {/* Phone Number */}
           <FormField
@@ -217,7 +230,8 @@ export const Step1Profile: React.FC = () => {
         <StepNavigation
           onBack={prevStep}
           onNext={nextStep}
-          nextLabel="Continue to Education"
+          isSubmitting={isAuthenticating}
+          nextLabel={showPasswordFields ? 'Create Account & Continue' : 'Continue to Education'}
         />
       </div>
     </div>

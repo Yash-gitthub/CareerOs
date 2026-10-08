@@ -1,22 +1,106 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type Session } from '@supabase/supabase-js';
 import type { UserProfile } from '../types/user';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-// Convert camelCase UserProfile to database schema format
+// createClient throws on an empty URL, so use a harmless placeholder when unconfigured.
+// Every helper below checks isSupabaseConfigured before touching the client.
+export const supabase = createClient(
+  supabaseUrl || 'http://localhost.invalid',
+  supabaseAnonKey || 'unconfigured',
+  { auth: { persistSession: true, autoRefreshToken: true } }
+);
+
+type AuthResult = { success: true; userId: string; hasSession: boolean } | { success: false; error: string };
+
+const toMessage = (err: unknown) => (err instanceof Error ? err.message : String(err));
+
+// ---------- Auth ----------
+
+export const signUpWithEmail = async (email: string, password: string, fullName: string): Promise<AuthResult> => {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase credentials not configured' };
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { full_name: fullName } }
+    });
+
+    if (error) {
+      if (/already registered|already exists/i.test(error.message)) {
+        return { success: false, error: 'An account with this email already exists. Please sign in instead.' };
+      }
+      return { success: false, error: error.message };
+    }
+
+    // With "Confirm email" enabled, Supabase returns a user with no identities for an
+    // existing address instead of an error.
+    if (!data.user || data.user.identities?.length === 0) {
+      return { success: false, error: 'An account with this email already exists. Please sign in instead.' };
+    }
+
+    return { success: true, userId: data.user.id, hasSession: Boolean(data.session) };
+  } catch (err: unknown) {
+    return { success: false, error: toMessage(err) };
+  }
+};
+
+export const signInWithEmail = async (email: string, password: string): Promise<AuthResult> => {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase credentials not configured' };
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      if (error && /email not confirmed/i.test(error.message)) {
+        return { success: false, error: 'Please confirm your email address first, then sign in.' };
+      }
+      return { success: false, error: 'Incorrect email or password.' };
+    }
+    return { success: true, userId: data.user.id, hasSession: Boolean(data.session) };
+  } catch (err: unknown) {
+    return { success: false, error: toMessage(err) };
+  }
+};
+
+export const signOut = async () => {
+  if (!isSupabaseConfigured) return;
+  try {
+    await supabase.auth.signOut();
+  } catch (err) {
+    console.warn('Sign-out failed:', toMessage(err));
+  }
+};
+
+export const getSession = async (): Promise<Session | null> => {
+  if (!isSupabaseConfigured) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    return data.session;
+  } catch {
+    return null;
+  }
+};
+
+// ---------- Profiles ----------
+
+// Convert camelCase UserProfile to database schema format.
+// Requires an authenticated session; RLS only allows writing your own row.
 export const syncProfileToSupabase = async (user: UserProfile): Promise<{ success: boolean; error?: string }> => {
   if (!isSupabaseConfigured) return { success: false, error: 'Supabase credentials not configured' };
 
   try {
+    const session = await getSession();
+    if (!session) return { success: false, error: 'Not signed in' };
+
     const payload = {
-      id: user.id,
+      id: session.user.id,
+      user_id: session.user.id,
       full_name: user.fullName || 'Anonymous Student',
-      email: user.email || '',
+      email: session.user.email || user.email || '',
       phone: user.phone || '',
       profile_photo: user.profilePhoto || null,
       role: user.role || 'student',
@@ -40,24 +124,22 @@ export const syncProfileToSupabase = async (user: UserProfile): Promise<{ succes
 
     return { success: true };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = toMessage(err);
     console.warn('Failed to sync to Supabase:', message);
     return { success: false, error: message };
   }
 };
 
-// Fetch user profile from Supabase
-export const fetchProfileFromSupabase = async (userIdOrEmail: string): Promise<UserProfile | null> => {
+// Fetch the signed-in user's own profile. RLS guarantees only that row is visible.
+export const fetchOwnProfile = async (userId: string): Promise<UserProfile | null> => {
   if (!isSupabaseConfigured) return null;
 
   try {
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
-      .or(`id.eq.${userIdOrEmail},email.eq.${userIdOrEmail}`)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .single();
+      .eq('user_id', userId)
+      .maybeSingle();
 
     if (error || !data) {
       return null;
@@ -65,6 +147,7 @@ export const fetchProfileFromSupabase = async (userIdOrEmail: string): Promise<U
 
     const profile: UserProfile = {
       id: data.id,
+      accountType: 'cloud',
       fullName: data.full_name || '',
       email: data.email || '',
       phone: data.phone || '',
@@ -120,12 +203,11 @@ export const submitMentorRegistration = async (data: MentorRegistrationData) => 
 
     return { success: true };
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : String(err);
-    return { success: false, error: message };
+    return { success: false, error: toMessage(err) };
   }
 };
 
-// Record assessment result
+// Record assessment result (owner-only via RLS; skipped when not signed in)
 export const recordAssessmentResult = async (params: {
   userId: string;
   targetRole: string;
@@ -135,10 +217,13 @@ export const recordAssessmentResult = async (params: {
   if (!isSupabaseConfigured) return { success: false };
 
   try {
+    const session = await getSession();
+    if (!session) return { success: false, error: 'Not signed in' };
+
     const { error } = await supabase
       .from('assessment_results')
       .insert([{
-        user_id: params.userId,
+        user_id: session.user.id,
         target_role: params.targetRole,
         score: params.score,
         total_questions: params.totalQuestions
