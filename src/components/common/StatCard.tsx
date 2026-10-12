@@ -1,11 +1,18 @@
 import React from 'react';
+import { clsx } from 'clsx';
 
-// System-monitor style stat panel.
-export const StatCard: React.FC<{ label: string; value: string; sub?: string }> = ({ label, value, sub }) => (
-  <div className="group relative h-full p-6 sm:p-8 rounded-sm terminal-panel overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-400/70 hover:shadow-card-hover">
-    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-indigo-500/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-    <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-slate-500">{label}</div>
-    <div className="mt-3 font-mono text-4xl sm:text-[2.6rem] font-semibold text-indigo-500 tabular-nums [text-shadow:0_0_18px_rgba(0,255,65,0.35)]">{value}</div>
-    {sub && <div className="mt-2 font-mono text-xs text-emerald-600">{sub}</div>}
+const TONES = {
+  paper: 'bg-white border-slate-200/80',
+  sage: 'bg-tint-sage border-emerald-200/60',
+  peach: 'bg-tint-peach border-indigo-200/60',
+  sand: 'bg-tint-sand border-amber-200/60',
+};
+
+// Numbered editorial card: "01  You tell it where you are."
+export const StatCard: React.FC<{ label: string; value: string; sub?: string; tone?: keyof typeof TONES }> = ({ label, value, sub, tone = 'paper' }) => (
+  <div className={clsx('h-full p-6 sm:p-7 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5 hover:shadow-card-hover', TONES[tone])}>
+    <div className="font-display italic text-3xl text-indigo-600">{label}</div>
+    <div className="mt-4 font-display text-xl text-slate-900 leading-snug">{value}</div>
+    {sub && <p className="mt-2 text-sm text-slate-600 leading-relaxed">{sub}</p>}
   </div>
 );

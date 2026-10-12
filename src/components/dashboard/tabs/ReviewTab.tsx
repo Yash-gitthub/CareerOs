@@ -54,11 +54,11 @@ const ReviewCard: React.FC<{ review: WeeklyReview }> = ({ review }) => {
         </div>
       </div>
 
-      <div className="p-4 rounded-sm bg-ink border border-indigo-300/70 shadow-glow-sm text-slate-900 space-y-2">
-        <p className="font-mono text-[11px] uppercase tracking-[0.12em] font-semibold text-indigo-500 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" />Career Twin recommendation</p>
-        <ul className="text-xs text-slate-700 space-y-1 list-disc pl-4 marker:text-indigo-500">{review.recommendations.map(r => <li key={r}>{r}</li>)}</ul>
-        <div className="pt-2 border-t border-indigo-200/60 text-[11px] text-slate-600 space-y-0.5">
-          <p className="font-semibold text-slate-900 flex items-center gap-1"><ArrowRight className="w-3 h-3" />Next week's plan (applied automatically)</p>
+      <div className="p-5 sm:p-6 rounded-2xl bg-slate-900 text-white space-y-2">
+        <p className="text-[10.5px] font-semibold uppercase tracking-[0.16em] text-indigo-300 flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5" />Career Twin recommendation</p>
+        <ul className="font-display text-[15px] text-slate-100 space-y-1.5 list-disc pl-4 marker:text-indigo-400">{review.recommendations.map(r => <li key={r}>{r}</li>)}</ul>
+        <div className="pt-3 mt-1 border-t border-slate-700 text-[11px] text-slate-400 space-y-0.5">
+          <p className="font-semibold text-white flex items-center gap-1"><ArrowRight className="w-3 h-3" />Next week's plan (applied automatically)</p>
           <p>Workload: {Math.round(review.nextWeek.multiplier * 100)}% of your daily study time</p>
           {review.nextWeek.focusSkills.length > 0 && <p>Focus skill: {review.nextWeek.focusSkills.join(', ')}</p>}
           {review.nextWeek.focusTopics.length > 0 && <p>DSA focus: {review.nextWeek.focusTopics.map(k => DSA_TOPICS.find(t => t.key === k)?.label || k).join(', ')}</p>}

@@ -12,9 +12,9 @@ export interface Point {
 
 const H = 200;
 const PAD = { top: 26, right: 12, bottom: 26, left: 38 };
-const INK = '#00ff41'; // neon green (brand)
-const GRID = '#18211a'; // dark green grid
-const MUTED = '#7b8a9c'; // muted blue-gray
+const INK = '#c4643f'; // terracotta (brand)
+const GRID = '#e3d9c7'; // warm grid
+const MUTED = '#7f7566'; // stone
 
 const niceMax = (max: number) => {
   if (max <= 0) return 10;
@@ -65,8 +65,8 @@ const Tooltip: React.FC<{ w: number; x: number; text: string }> = ({ w, x, text 
   const left = Math.min(Math.max(x - width / 2, 2), w - width - 2);
   return (
     <g pointerEvents="none">
-      <rect x={left} y={0} width={width} height={22} rx={2} fill="#050505" stroke="#00ff41" strokeOpacity={0.5} opacity={0.95} />
-      <text x={left + width / 2} y={15} textAnchor="middle" fontSize={11} fontFamily="JetBrains Mono, monospace" fill="#eef3f0">{text}</text>
+      <rect x={left} y={0} width={width} height={22} rx={8} fill="#1f1c19" opacity={0.94} />
+      <text x={left + width / 2} y={15} textAnchor="middle" fontSize={11} fill="#fcfaf5">{text}</text>
     </g>
   );
 };
@@ -194,7 +194,7 @@ export const RingGauge: React.FC<{ value: number | null; size?: number; label?: 
         strokeDasharray={`${(pct / 100) * c} ${c}`} transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{ transition: 'stroke-dasharray 0.6s ease' }}
       />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={size * 0.22} fontWeight={700} fontFamily="JetBrains Mono, monospace" fill="#00ff41">
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={size * 0.22} fontWeight={400} fontFamily="Fraunces, Georgia, serif" fill="#1f1c19">
         {value === null ? '—' : `${Math.round(pct)}%`}
       </text>
     </svg>

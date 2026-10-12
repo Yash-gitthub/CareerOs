@@ -4,7 +4,7 @@ import { Brain, Code2, FolderGit2, GitBranch, BookOpen, User, Cpu } from 'lucide
 import type { Priority, TaskCategory, TaskStatus } from '../../engine/types';
 
 export const Card: React.FC<{ className?: string; children: React.ReactNode }> = ({ className, children }) => (
-  <div className={clsx('bg-white/80 border border-indigo-200/60 rounded-md p-5 sm:p-6 shadow-card backdrop-blur-[2px] transition-all duration-300 hover:border-indigo-300/80 hover:shadow-card-hover', className)}>{children}</div>
+  <div className={clsx('bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-7 shadow-card transition-shadow duration-300 hover:shadow-card-hover', className)}>{children}</div>
 );
 
 export const CardHeader: React.FC<{
@@ -16,10 +16,10 @@ export const CardHeader: React.FC<{
   <div className="flex items-start justify-between gap-3 mb-4">
     <div className="flex items-center gap-2.5 min-w-0">
       {icon && (
-        <div className="w-8 h-8 rounded-sm bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-500 shrink-0">{icon}</div>
+        <div className="w-8 h-8 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">{icon}</div>
       )}
       <div className="min-w-0">
-        <h3 className="font-mono font-semibold text-slate-900 text-[13px] uppercase tracking-[0.08em] truncate">{title}</h3>
+        <h3 className="font-display text-lg sm:text-[19px] leading-tight text-slate-900 truncate">{title}</h3>
         {subtitle && <p className="text-[11px] text-slate-500">{subtitle}</p>}
       </div>
     </div>
@@ -38,7 +38,7 @@ const TONES: Record<Tone, string> = {
 };
 
 export const Badge: React.FC<{ tone?: Tone; children: React.ReactNode; className?: string }> = ({ tone = 'slate', children, className }) => (
-  <span className={clsx('inline-flex items-center gap-1 px-2 py-0.5 rounded-sm font-mono text-[10px] font-semibold uppercase tracking-wide border whitespace-nowrap', TONES[tone], className)}>
+  <span className={clsx('inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border whitespace-nowrap', TONES[tone], className)}>
     {children}
   </span>
 );
@@ -49,16 +49,16 @@ export const Meter: React.FC<{ value: number; max?: number; tone?: 'indigo' | 'e
   const pct = max > 0 ? Math.max(0, Math.min(100, (value / max) * 100)) : 0;
   const color = { indigo: 'bg-indigo-600', emerald: 'bg-emerald-600', amber: 'bg-amber-500', red: 'bg-red-500' }[tone];
   return (
-    <div className={clsx('h-1.5 rounded-none bg-slate-200/70 overflow-hidden', className)} role="meter" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
-      <div className={clsx('h-full transition-all duration-500', color)} style={{ width: `${pct}%` }} />
+    <div className={clsx('h-1.5 rounded-full bg-slate-200/80 overflow-hidden', className)} role="meter" aria-valuenow={Math.round(pct)} aria-valuemin={0} aria-valuemax={100} aria-label={label}>
+      <div className={clsx('h-full rounded-full transition-all duration-500', color)} style={{ width: `${pct}%` }} />
     </div>
   );
 };
 
 export const EmptyState: React.FC<{ icon?: React.ReactNode; title: string; body?: string; action?: React.ReactNode }> = ({ icon, title, body, action }) => (
-  <div className="p-6 rounded-sm bg-slate-50/60 border border-dashed border-indigo-200 text-center space-y-2">
+  <div className="p-6 rounded-xl bg-slate-50/70 border border-dashed border-slate-300 text-center space-y-2">
     {icon && <div className="w-8 h-8 mx-auto text-slate-400 flex items-center justify-center">{icon}</div>}
-    <p className="text-xs font-semibold text-slate-700">{title}</p>
+    <p className="font-display text-base text-slate-800">{title}</p>
     {body && <p className="text-[11px] text-slate-500 max-w-sm mx-auto leading-relaxed">{body}</p>}
     {action && <div className="pt-1">{action}</div>}
   </div>
@@ -66,8 +66,8 @@ export const EmptyState: React.FC<{ icon?: React.ReactNode; title: string; body?
 
 export const StatTile: React.FC<{ label: string; value: React.ReactNode; sub?: React.ReactNode }> = ({ label, value, sub }) => (
   <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-    <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">{label}</div>
-    <div className="font-mono text-xl font-bold text-indigo-500 tabular-nums">{value}</div>
+    <div className="eyebrow">{label}</div>
+    <div className="font-display text-2xl text-slate-900 tabular-nums mt-0.5">{value}</div>
     {sub && <div className="text-[11px] text-slate-500">{sub}</div>}
   </div>
 );

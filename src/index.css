@@ -1,124 +1,51 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  :root {
-    color-scheme: dark;
-  }
-
-  html {
-    background: #050505;
-  }
-
   body {
     @apply text-slate-900 antialiased font-sans;
-    background-color: #050505;
-    /* Ambient green glow from the top, fading into black. */
-    background-image:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(0, 255, 65, 0.09), transparent 70%),
-      radial-gradient(ellipse 50% 40% at 100% 0%, rgba(255, 0, 212, 0.035), transparent 70%);
-    background-attachment: fixed;
+    background-color: #f5f0e7;
     overflow-x: hidden;
   }
 
-  /* Subtle technical grid and scanlines over the whole app (purely decorative). */
-  body::before,
-  body::after {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-  }
-
-  body::before {
-    background-image:
-      linear-gradient(rgba(0, 255, 65, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0, 255, 65, 0.035) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%);
-    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 85%);
-  }
-
-  body::after {
-    background: repeating-linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 0 1px, transparent 1px 3px);
-    z-index: 60;
-  }
-
-  #root {
-    position: relative;
-    z-index: 1;
-  }
-
-  h1, h2, h3 {
-    @apply font-display;
-    letter-spacing: -0.02em;
+  /* Editorial serif for page and section titles. */
+  h1, h2 {
+    font-family: Fraunces, Georgia, Cambria, 'Times New Roman', serif;
+    font-optical-sizing: auto;
+    font-weight: 400 !important;
+    letter-spacing: -0.025em;
   }
 
   ::selection {
-    background: #00ff41;
-    color: #050505;
-  }
-
-  input, textarea, select {
-    color-scheme: dark;
+    background: #c4643f;
+    color: #fcfaf5;
   }
 
   input::placeholder, textarea::placeholder {
-    color: #56657a;
+    color: #a69a86;
   }
 
   :focus-visible {
-    outline: 1px solid #00ff41;
+    outline: 2px solid #c4643f;
     outline-offset: 2px;
   }
 }
 
 @layer components {
-  /* `// SYSTEM STATUS: ONLINE` style labels. */
-  .term-label {
-    @apply font-mono text-[11px] uppercase tracking-[0.14em] text-indigo-400;
+  /* Small uppercase section label, e.g. "YOUR CAREER TWIN". */
+  .eyebrow {
+    @apply text-[10.5px] font-semibold uppercase tracking-[0.16em] text-slate-500;
   }
 
-  .neon-text {
-    color: #00ff41;
-    text-shadow: 0 0 22px rgba(0, 255, 65, 0.45), 0 0 2px rgba(0, 255, 65, 0.6);
-  }
-
-  .neon-text-magenta {
-    color: #ff00d4;
-    text-shadow: 0 0 22px rgba(255, 0, 212, 0.45), 0 0 2px rgba(255, 0, 212, 0.6);
-  }
-
-  .terminal-panel {
-    @apply relative border border-indigo-200/70 bg-[#0a0f0b]/90;
-  }
-
-  /* Small corner brackets that frame a panel. */
-  .corner-brackets::before,
-  .corner-brackets::after {
-    content: '';
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    border-color: #00ff41;
-    opacity: 0.7;
-    pointer-events: none;
-  }
-  .corner-brackets::before {
-    top: -1px;
-    left: -1px;
-    border-top: 1px solid;
-    border-left: 1px solid;
-  }
-  .corner-brackets::after {
-    bottom: -1px;
-    right: -1px;
-    border-bottom: 1px solid;
-    border-right: 1px solid;
+  /* The italic terracotta word in headlines ("Build the career you *want.*"). */
+  .accent-italic {
+    font-family: Fraunces, Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #c4643f;
   }
 
   .status-dot {
@@ -128,8 +55,8 @@
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -137,12 +64,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #18211a;
-  border-radius: 0;
+  background: #e3d9c7;
+  border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #145c27;
+  background: #cfc2ac;
 }
 
 @media (prefers-reduced-motion: reduce) {

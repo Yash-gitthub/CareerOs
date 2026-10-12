@@ -42,7 +42,7 @@ export const CareerTwinSetup: React.FC = () => {
           particleCount: 50,
           spread: 60,
           origin: { y: 0.7 },
-          colors: ['#00ff41', '#39ff14', '#ff00d4', '#00f5ff']
+          colors: ['#c4643f', '#e19f7d', '#899b6b', '#cf983e', '#1f1c19']
         });
       } catch (e) {
         // ignore if canvas not supported

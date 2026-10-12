@@ -11,37 +11,24 @@ export const Navbar: React.FC = () => {
   const isCloudAccount = user.accountType === 'cloud';
 
   return (
-    <header className="sticky top-0 z-40 bg-ink/85 backdrop-blur-md border-b border-indigo-200/60">
+    <header className="sticky top-0 z-40 bg-slate-50/85 backdrop-blur-md border-b border-slate-200/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
         {/* Brand Logo */}
         <div
           onClick={() => isAuthOrOnboarding && setCurrentScreen('welcome')}
           className="flex items-center gap-2.5 cursor-pointer group select-none"
         >
-          <div className="w-9 h-9 rounded-sm border border-indigo-500/70 bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-glow-sm group-hover:shadow-glow transition-shadow">
-            <Compass className="w-5 h-5" />
+          <div className="w-8 h-8 rounded-full border-[1.5px] border-slate-900 flex items-center justify-center text-indigo-600 group-hover:bg-white transition-colors">
+            <Compass className="w-4 h-4" />
           </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-display font-bold text-base sm:text-lg text-slate-950 tracking-tight">
-                Career<span className="text-indigo-500">OS</span>
-              </span>
-              <span className="hidden sm:inline-block font-mono text-[9px] uppercase tracking-[0.14em] text-indigo-500 px-1.5 py-0.5 rounded-sm border border-indigo-300">
-                Twin_MVP
-              </span>
-            </div>
-            <p className="font-mono text-[10px] text-slate-500 hidden sm:block tracking-wide">
-              // AI career twin · engineering & IT
+          <div className="leading-tight">
+            <span className="font-display text-[17px] sm:text-lg text-slate-900 tracking-tight">
+              AI Career<span className="italic text-indigo-600">OS</span>
+            </span>
+            <p className="text-[10.5px] text-slate-500 hidden sm:block">
+              Your AI Career Twin for engineering & IT
             </p>
           </div>
-        </div>
-
-        {/* Current location readout (display only) */}
-        <div className="hidden lg:flex items-center gap-2 font-mono text-[11px] text-slate-500 tracking-wide">
-          <span className="status-dot" />
-          <span className="text-indigo-500">SYS://</span>
-          <span className="text-slate-600">{currentScreen.replace(/-/g, '_')}</span>
-          <span className="w-1.5 h-3.5 bg-indigo-500/80 animate-blink" aria-hidden="true" />
         </div>
 
         {/* Action Controls */}
@@ -55,7 +42,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => syncToDatabase()}
                 disabled={isSyncing}
                 title="Sync profile with Supabase"
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-sm font-mono text-[11px] font-medium border transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
                   dbStatus === 'synced'
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
                     : 'bg-indigo-50 border-indigo-200 text-indigo-700 hover:bg-indigo-100'
@@ -67,14 +54,16 @@ export const Navbar: React.FC = () => {
               ) : (
                 <span
                   title="This profile is stored only in this browser"
-                  className="hidden md:inline-block px-2.5 py-1 rounded-sm font-mono text-[10px] uppercase tracking-wide border bg-amber-50 border-amber-300/70 text-amber-600"
+                  className="hidden md:inline-block px-3 py-1 rounded-full text-[11px] font-medium border bg-amber-50 border-amber-200 text-amber-800"
                 >
                   {user.accountType === 'demo' ? 'Demo sandbox · not synced' : 'Local only · not synced'}
                 </span>
               )}
 
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1 border border-slate-200 bg-slate-50 rounded-sm font-mono text-[11px] text-slate-700">
-                <span className="status-dot"></span>
+              <div className="hidden sm:flex items-center gap-2 pl-1 pr-3 py-1 border border-slate-200 bg-white rounded-full text-xs text-slate-700">
+                <span className="w-6 h-6 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-display text-xs flex items-center justify-center" aria-hidden="true">
+                  {(user.fullName || 'S').charAt(0).toUpperCase()}
+                </span>
                 <span>{user.fullName || 'Student'}</span>
                 <span className="text-slate-400">•</span>
                 <span className="text-indigo-600">{user.career.targetRole || 'Engineering'}</span>
@@ -94,7 +83,7 @@ export const Navbar: React.FC = () => {
                 type="button"
                 onClick={() => loginAsDemoUser()}
                 title="Quick demo with filled sample profile"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 font-mono text-[11px] font-medium text-slate-600 hover:text-indigo-500 border border-slate-200 hover:border-indigo-300 bg-transparent hover:bg-indigo-50 rounded-sm transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 bg-white/60 hover:bg-white rounded-full transition-colors"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Demo Student Profile</span>

@@ -8,16 +8,16 @@ interface StepHeaderProps {
 
 export const StepHeader: React.FC<StepHeaderProps> = ({ title, subtitle, badge }) => {
   return (
-    <div className="mb-6 text-center sm:text-left">
+    <div className="mb-8 text-center">
       {badge && (
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 mb-2">
+        <span className="eyebrow block mb-3">
           {badge}
         </span>
       )}
-      <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+      <h2 className="text-3xl sm:text-[2.6rem] leading-[1.08] text-slate-900">
         {title}
       </h2>
-      <p className="mt-1.5 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl">
+      <p className="mt-3 text-sm sm:text-base text-slate-600 leading-relaxed max-w-xl mx-auto">
         {subtitle}
       </p>
     </div>

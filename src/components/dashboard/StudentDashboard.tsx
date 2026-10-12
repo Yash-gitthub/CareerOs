@@ -140,20 +140,20 @@ const Overview: React.FC<{ openAssessment: () => void; openTwin: () => void }> =
       </Card>
 
       {!hasAssessment && (
-        <div className="relative bg-ink border border-indigo-300/70 shadow-glow-sm rounded-md p-6 sm:p-8 text-slate-900 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="relative bg-slate-900 rounded-2xl p-6 sm:p-9 text-white flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-sm font-mono text-[10px] uppercase tracking-[0.12em] font-semibold bg-indigo-50 text-indigo-500 border border-indigo-300">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-indigo-300">
+              <Sparkles className="w-3.5 h-3.5" />
               <span>Next Recommended Step</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Take your Career Assessment</h2>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+            <h2 className="text-3xl sm:text-4xl">Take your <span className="accent-italic">Career Assessment.</span></h2>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
               Programming, 10 DSA topics, Core CS and {twin.career.domain} questions. Your Career Twin uses the results to build your roadmap and daily tasks.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-            <Button variant="outline" onClick={openTwin} className="w-full sm:w-auto">Explore My Career Twin</Button>
-            <Button variant="primary" onClick={openAssessment} rightIcon={<ArrowRight className="w-4 h-4" />} className="w-full sm:w-auto">Start Assessment</Button>
+            <Button variant="outline" onClick={openTwin} className="w-full sm:w-auto bg-transparent hover:bg-slate-800 text-white border-slate-600 hover:border-slate-500">Explore My Career Twin</Button>
+            <Button variant="primary" onClick={openAssessment} rightIcon={<ArrowRight className="w-4 h-4" />} className="w-full sm:w-auto bg-white hover:bg-slate-100 text-slate-900">Start Assessment</Button>
           </div>
         </div>
       )}
@@ -184,7 +184,7 @@ export const StudentDashboard: React.FC = () => {
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 space-y-4">
         {state.assessments.length === 0 && (
           <div className="text-center space-y-1">
-            <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">Welcome, {firstName}. One step before you start.</h1>
+            <h1 className="text-3xl sm:text-4xl text-slate-900">Welcome, <span className="accent-italic">{firstName}.</span> One step before you start.</h1>
             <p className="text-sm text-slate-600">Verify the skills in your profile so CareerOS can trust them and plan from your real level.</p>
           </div>
         )}
@@ -198,15 +198,14 @@ export const StudentDashboard: React.FC = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Greeting & Readiness Hero */}
-      <div className="bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-8 shadow-card relative overflow-hidden">
-        <div className="absolute top-0 right-0 -mt-8 -mr-8 w-64 h-64 bg-indigo-50/60 rounded-full blur-2xl pointer-events-none" />
+      <div className="relative pt-2">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3 max-w-2xl">
-            <button onClick={openTwin} className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100 hover:bg-indigo-100">
+            <button onClick={openTwin} className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white text-slate-700 border border-slate-200 hover:border-slate-300">
               <Compass className="w-3.5 h-3.5" />
               <span>Career Twin v{state.twinVersion} · {twin.stage}</span>
             </button>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">{greeting()}, {firstName}</h1>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl leading-[1.02] text-slate-900">{greeting()}, <span className="accent-italic">{firstName}.</span></h1>
             <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
               {twin.calibrated
                 ? <>Your Career Twin last updated {timeAgo(state.twinUpdatedAt)}. {twin.weaknesses[0] ? <>Top priority right now: <strong>{twin.weaknesses[0]}</strong>.</> : 'Keep up the momentum.'}</>
@@ -219,10 +218,10 @@ export const StudentDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 lg:min-w-[300px] flex items-center gap-4">
+          <div className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-card lg:min-w-[300px] flex items-center gap-4">
             <RingGauge value={twin.readiness.score} label={`Career readiness ${twin.readiness.score}%`} />
             <div className="space-y-1">
-              <div className="text-xs font-semibold text-slate-700">Career Readiness</div>
+              <div className="eyebrow">Career readiness</div>
               {delta !== null && delta !== 0 && (
                 <div className={clsx('text-xs font-bold tabular-nums', delta > 0 ? 'text-emerald-700' : 'text-red-600')}>
                   {delta > 0 ? '▲' : '▼'} {Math.abs(delta)} pts since {prev ? formatDate(localDate(prev.createdAt)) : ''}
@@ -242,7 +241,7 @@ export const StudentDashboard: React.FC = () => {
       </div>
 
       {preview && (
-        <div role="status" className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+        <div role="status" className="p-3 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
           <strong>Preview mode (development only).</strong> The skill test and feature locks are bypassed in this browser tab. Remove <code>?preview</code> from the URL to see the normal flow.
         </div>
       )}
@@ -251,7 +250,7 @@ export const StudentDashboard: React.FC = () => {
 
       {/* Tabs */}
       <nav className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="Dashboard sections">
-        <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl w-max sm:w-auto" role="tablist">
+        <div className="flex gap-1 p-1 bg-white border border-slate-200/80 rounded-full w-max shadow-subtle" role="tablist">
           {TABS.map(t => {
             const open = preview || isUnlocked(state, t.key);
             const isNew = open && !state.visitedTabs.includes(t.key);
@@ -264,14 +263,14 @@ export const StudentDashboard: React.FC = () => {
                 title={open ? undefined : `Locked: ${FEATURE_JOURNEY.find(f => f.tab === t.key)?.requirement}`}
                 onClick={() => setActiveTab(t.key)}
                 className={clsx(
-                  'relative inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors',
+                  'relative inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors',
                   activeTab === t.key
-                    ? open ? 'bg-indigo-600 text-white shadow-sm' : 'bg-slate-200 text-slate-700'
+                    ? open ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-700'
                     : open ? 'text-slate-600 hover:bg-slate-100' : 'text-slate-400 hover:bg-slate-50'
                 )}
               >
                 {open ? t.icon : <Lock className="w-3.5 h-3.5" />}{t.label}
-                {isNew && <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" aria-label="New" />}
+                {isNew && <span className="absolute top-1 right-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500" aria-label="New" />}
               </button>
             );
           })}
