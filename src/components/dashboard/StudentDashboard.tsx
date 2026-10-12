@@ -140,20 +140,20 @@ const Overview: React.FC<{ openAssessment: () => void; openTwin: () => void }> =
       </Card>
 
       {!hasAssessment && (
-        <div className="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-lg flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="relative bg-ink border border-indigo-300/70 shadow-glow-sm rounded-md p-6 sm:p-8 text-slate-900 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-2 max-w-xl text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/30 text-indigo-200 border border-indigo-400/30">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-300" />
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-sm font-mono text-[10px] uppercase tracking-[0.12em] font-semibold bg-indigo-50 text-indigo-500 border border-indigo-300">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
               <span>Next Recommended Step</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Take your Career Assessment</h2>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               Programming, 10 DSA topics, Core CS and {twin.career.domain} questions. Your Career Twin uses the results to build your roadmap and daily tasks.
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto shrink-0">
-            <Button variant="outline" onClick={openTwin} className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white border-white/20 text-xs">Explore My Career Twin</Button>
-            <Button variant="primary" onClick={openAssessment} rightIcon={<ArrowRight className="w-4 h-4" />} className="w-full sm:w-auto bg-indigo-500 hover:bg-indigo-600 text-white text-xs px-6 py-2.5 shadow-md">Start Assessment</Button>
+            <Button variant="outline" onClick={openTwin} className="w-full sm:w-auto">Explore My Career Twin</Button>
+            <Button variant="primary" onClick={openAssessment} rightIcon={<ArrowRight className="w-4 h-4" />} className="w-full sm:w-auto">Start Assessment</Button>
           </div>
         </div>
       )}
@@ -253,7 +253,7 @@ export const StudentDashboard: React.FC = () => {
       <nav className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0" aria-label="Dashboard sections">
         <div className="flex gap-1 p-1 bg-white border border-slate-200 rounded-xl w-max sm:w-auto" role="tablist">
           {TABS.map(t => {
-            const open = isUnlocked(state, t.key);
+            const open = preview || isUnlocked(state, t.key);
             const isNew = open && !state.visitedTabs.includes(t.key);
             return (
               <button

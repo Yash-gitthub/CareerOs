@@ -1,6 +1,7 @@
 import React from 'react';
 import { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
 import { Navbar } from './components/common/Navbar';
+import { Footer } from './components/common/Footer';
 import { WelcomeScreen } from './components/auth/WelcomeScreen';
 import { RoleSelection } from './components/auth/RoleSelection';
 import { LoginModal } from './components/auth/LoginModal';
@@ -60,10 +61,10 @@ const MainRouter: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen flex flex-col font-sans text-slate-900">
       <Navbar />
       {authNotice && (
-        <div role="status" className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs">
+        <div role="status" className="bg-amber-50 border-b border-amber-300/60 text-amber-800 font-mono text-[11px]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-4">
             <span>{authNotice}</span>
             <button
@@ -80,22 +81,7 @@ const MainRouter: React.FC = () => {
         {renderScreen()}
       </main>
 
-      {/* Subtle Footer */}
-      {currentScreen !== 'twin-generation' && (
-        <footer className="py-6 border-t border-slate-200/60 text-center text-xs text-slate-500 bg-white/50">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-800">AI CareerOS</span>
-              <span>— Your AI Career Twin for Engineering & IT</span>
-            </div>
-            <div className="flex items-center gap-4 text-[11px] text-slate-400">
-              <span>Production-ready Frontend Flow</span>
-              <span>•</span>
-              <span>No synthetic data</span>
-            </div>
-          </div>
-        </footer>
-      )}
+      {currentScreen !== 'twin-generation' && <Footer />}
     </div>
   );
 };
