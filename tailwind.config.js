@@ -1,52 +1,67 @@
 /** @type {import('tailwindcss').Config} */
 
-// Cyberpunk terminal theme.
-// The UI is written with Tailwind's light-theme palette names (bg-white, text-slate-900,
-// bg-indigo-600 …). Each palette below is redefined for a dark terminal: low shades are
-// near-black surfaces and high shades are bright text, so every light-on-dark pairing in
-// the components keeps its contrast. `indigo` is the primary accent (neon green),
-// `emerald`/`sky` are cyan, `red` is neon red and `neon` is the magenta highlight.
+// Warm editorial theme: cream paper, charcoal ink, terracotta accent, sage and peach tints.
+// Components are written with Tailwind's standard palette names (bg-white, text-slate-900,
+// bg-indigo-600 …); the palettes below give those names the theme's colours.
+//   slate   → warm stone neutrals (cream → charcoal)
+//   indigo  → terracotta (primary accent)
+//   emerald → sage (success / positive)
+//   amber   → ochre, red → brick, sky/blue → dusty blue
 
-const surface = {
-  50: '#0a0c0a',
-  100: '#101410',
-  200: '#18211a',
-  300: '#243128',
-  400: '#56657a',
-  500: '#7b8a9c',
-  600: '#9eabb9',
-  700: '#c1cad3',
-  800: '#dfe5e9',
-  900: '#eef3f0',
-  950: '#ffffff',
+const stone = {
+  50: '#f5f0e7',
+  100: '#ede6d9',
+  200: '#e3d9c7',
+  300: '#cfc2ac',
+  400: '#a69a86',
+  500: '#7f7566',
+  600: '#5f574b',
+  700: '#443e35',
+  800: '#2e2a25',
+  900: '#1f1c19',
+  950: '#141210',
 };
 
-const green = {
-  50: '#06140a',
-  100: '#0a2111',
-  200: '#0e3518',
-  300: '#145c27',
-  400: '#1fd94a',
-  500: '#00ff41',
-  600: '#00ff41',
-  700: '#39ff14',
-  800: '#6dff86',
-  900: '#a8ffb6',
-  950: '#e2ffe7',
+const terracotta = {
+  50: '#fbefe7',
+  100: '#f6dece',
+  200: '#edc0a6',
+  300: '#e19f7d',
+  400: '#d48159',
+  500: '#c4643f',
+  600: '#b5552f',
+  700: '#964427',
+  800: '#773723',
+  900: '#5c2c1e',
+  950: '#33170f',
 };
 
-const cyan = {
-  50: '#04131a',
-  100: '#061f28',
-  200: '#0a343f',
-  300: '#0f5a66',
-  400: '#1fd5e6',
-  500: '#00e5f5',
-  600: '#00f5ff',
-  700: '#5cf8ff',
-  800: '#9cfbff',
-  900: '#cbfdff',
-  950: '#ebffff',
+const sage = {
+  50: '#eff2e9',
+  100: '#e1e7d6',
+  200: '#c9d4b6',
+  300: '#a9b98f',
+  400: '#899b6b',
+  500: '#6d8152',
+  600: '#576a40',
+  700: '#465535',
+  800: '#39442d',
+  900: '#2f3826',
+  950: '#181e12',
+};
+
+const dusty = {
+  50: '#eef2f4',
+  100: '#dde5ea',
+  200: '#c2d0d9',
+  300: '#9db3c1',
+  400: '#7493a6',
+  500: '#58788c',
+  600: '#476275',
+  700: '#3b5060',
+  800: '#334350',
+  900: '#2c3944',
+  950: '#1b242c',
 };
 
 export default {
@@ -57,93 +72,85 @@ export default {
   theme: {
     extend: {
       colors: {
-        white: '#0b0e0c', // panels
-        slate: surface,
-        indigo: green,
-        brand: green,
-        emerald: cyan,
-        sky: cyan,
-        blue: cyan,
+        white: '#fcfaf5', // card paper
+        slate: stone,
+        indigo: terracotta,
+        brand: terracotta,
+        emerald: sage,
+        sky: dusty,
+        blue: dusty,
         amber: {
-          50: '#161004',
-          100: '#231a06',
-          200: '#3a2b09',
-          300: '#6b4f10',
-          400: '#ffc233',
-          500: '#ffb800',
-          600: '#ffc533',
-          700: '#ffd166',
-          800: '#ffdf8f',
-          900: '#ffedbf',
-          950: '#fff7e3',
+          50: '#fbf3e2',
+          100: '#f5e5c3',
+          200: '#ebcf94',
+          300: '#ddb363',
+          400: '#cf983e',
+          500: '#b97f27',
+          600: '#9c681e',
+          700: '#7c521b',
+          800: '#64431a',
+          900: '#523718',
+          950: '#2e1d0a',
         },
         red: {
-          50: '#190509',
-          100: '#28080f',
-          200: '#46101b',
-          300: '#7a1a2c',
-          400: '#ff4d6d',
-          500: '#ff2e57',
-          600: '#ff2e57',
-          700: '#ff6b86',
-          800: '#ff9db0',
-          900: '#ffc6d1',
-          950: '#ffe5ea',
+          50: '#fbeeec',
+          100: '#f6dbd6',
+          200: '#ecb8ae',
+          300: '#df8f81',
+          400: '#cf6a59',
+          500: '#bb4d3c',
+          600: '#a13d2f',
+          700: '#823228',
+          800: '#6a2b24',
+          900: '#572621',
+          950: '#2f110e',
         },
-        neon: {
-          green: '#00ff41',
-          lime: '#39ff14',
-          magenta: '#ff00d4',
-          cyan: '#00f5ff',
+        // Section tints from the reference design.
+        tint: {
+          sage: '#dfe4d3',
+          peach: '#f3ddd0',
+          sand: '#ece2cf',
         },
         ink: {
-          DEFAULT: '#050505',
-          900: '#080808',
+          DEFAULT: '#1f1c19',
+          900: '#141210',
         },
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', '"IBM Plex Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+        display: ['Fraunces', 'Georgia', 'Cambria', '"Times New Roman"', 'serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
       },
       borderRadius: {
-        // Sharper corners across the app.
-        lg: '0.375rem',
-        xl: '0.375rem',
-        '2xl': '0.5rem',
-        '3xl': '0.625rem',
+        lg: '0.625rem',
+        xl: '0.875rem',
+        '2xl': '1.25rem',
+        '3xl': '1.75rem',
       },
       boxShadow: {
-        'subtle': '0 0 0 1px rgba(0, 255, 65, 0.04)',
-        'card': '0 0 0 1px rgba(0, 255, 65, 0.03), 0 8px 24px -12px rgba(0, 0, 0, 0.8)',
-        'card-hover': '0 0 0 1px rgba(0, 255, 65, 0.18), 0 0 28px -6px rgba(0, 255, 65, 0.22)',
-        'glow': '0 0 18px rgba(0, 255, 65, 0.45), 0 0 2px rgba(0, 255, 65, 0.9)',
-        'glow-sm': '0 0 10px rgba(0, 255, 65, 0.35)',
-        'glow-magenta': '0 0 18px rgba(255, 0, 212, 0.45)',
+        'subtle': '0 1px 2px rgba(31, 28, 25, 0.04)',
+        'card': '0 1px 2px rgba(31, 28, 25, 0.04), 0 6px 20px -12px rgba(31, 28, 25, 0.12)',
+        'card-hover': '0 2px 4px rgba(31, 28, 25, 0.05), 0 18px 36px -18px rgba(31, 28, 25, 0.22)',
+        'soft': '0 10px 30px -16px rgba(150, 68, 39, 0.35)',
       },
       keyframes: {
         'fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '0%': { opacity: '0', transform: 'translateY(12px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        blink: {
-          '0%, 49%': { opacity: '1' },
-          '50%, 100%': { opacity: '0' },
-        },
         'status-pulse': {
-          '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0 rgba(0, 255, 65, 0.6)' },
-          '50%': { opacity: '0.75', boxShadow: '0 0 0 5px rgba(0, 255, 65, 0)' },
+          '0%, 100%': { opacity: '1', boxShadow: '0 0 0 0 rgba(196, 100, 63, 0.45)' },
+          '50%': { opacity: '0.85', boxShadow: '0 0 0 5px rgba(196, 100, 63, 0)' },
         },
-        sweep: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+        'orbit-spin': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
         },
       },
       animation: {
-        'fade-up': 'fade-up 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both',
-        blink: 'blink 1.1s steps(1) infinite',
-        'status-pulse': 'status-pulse 2s ease-in-out infinite',
-        sweep: 'sweep 3.5s linear infinite',
+        'fade-up': 'fade-up 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both',
+        'status-pulse': 'status-pulse 2.2s ease-in-out infinite',
+        'orbit-spin': 'orbit-spin 120s linear infinite',
       },
     },
   },

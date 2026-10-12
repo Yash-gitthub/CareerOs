@@ -36,7 +36,7 @@ export const CareerTwinDrawer: React.FC<CareerTwinDrawerProps> = ({ isOpen, onCl
   const b = twin.behavioral;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/75 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Career Twin">
+    <div className="fixed inset-0 z-50 overflow-hidden bg-slate-900/35 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Career Twin">
       <button className="absolute inset-0 w-full h-full cursor-default" aria-label="Close drawer" onClick={onClose} />
       <div className="absolute inset-y-0 right-0 max-w-full flex pl-10">
         <div className="w-screen max-w-lg bg-white shadow-2xl border-l border-slate-200 flex flex-col">
@@ -65,10 +65,10 @@ export const CareerTwinDrawer: React.FC<CareerTwinDrawerProps> = ({ isOpen, onCl
             </div>
 
             {!hasAssessment && (
-              <div className="p-4 rounded-sm bg-ink border border-indigo-300/70 shadow-glow-sm text-slate-900 space-y-3">
-                <div className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.12em] font-semibold text-indigo-500"><Sparkles className="w-4 h-4" />Calibrate your Twin</div>
-                <p className="text-xs text-slate-600 leading-relaxed">The diagnostic measures DSA, Core CS and domain skills so gaps and the roadmap are based on evidence, not just self-ratings.</p>
-                <Button size="sm" onClick={() => { onClose(); onStartAssessment(); }} className="w-full">Start assessment</Button>
+              <div className="p-5 sm:p-6 rounded-2xl bg-slate-900 text-white space-y-3">
+                <div className="flex items-center gap-2 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-indigo-300"><Sparkles className="w-4 h-4" />Calibrate your Twin</div>
+                <p className="text-xs text-slate-300 leading-relaxed">The diagnostic measures DSA, Core CS and domain skills so gaps and the roadmap are based on evidence, not just self-ratings.</p>
+                <Button size="sm" onClick={() => { onClose(); onStartAssessment(); }} className="w-full bg-indigo-600 hover:bg-indigo-700">Start assessment</Button>
               </div>
             )}
 
