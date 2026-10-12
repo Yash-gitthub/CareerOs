@@ -401,7 +401,7 @@ interface AssessmentModalProps {
 export const AssessmentModal: React.FC<AssessmentModalProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs" role="dialog" aria-modal="true" aria-label="Career assessment">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Career assessment">
       <AssessmentFlow variant="modal" onClose={onClose} />
     </div>
   );
