@@ -1,8 +1,9 @@
 import { createClient, type Session } from '@supabase/supabase-js';
 import type { UserProfile } from '../types/user';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const rawSupabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const supabaseUrl = rawSupabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
+const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 

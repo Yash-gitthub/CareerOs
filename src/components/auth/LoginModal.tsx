@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Lock, LogIn, UserCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, LogIn, UserCheck, Eye, EyeOff } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { FormField } from '../common/FormField';
 import { Button } from '../common/Button';
@@ -8,6 +8,7 @@ export const LoginModal: React.FC = () => {
   const { setCurrentScreen, loginAsDemoUser, loginWithEmail } = useOnboarding();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -61,7 +62,7 @@ export const LoginModal: React.FC = () => {
 
           <FormField
             label="Password"
-            type="password"
+            type={showPassword ? 'text' : 'password'}
             placeholder="••••••••"
             value={password}
             onChange={(e) => {
@@ -69,6 +70,17 @@ export const LoginModal: React.FC = () => {
               setError('');
             }}
             leftIcon={<Lock className="w-4 h-4" />}
+            rightElement={
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="text-slate-400 hover:text-slate-600 p-1 focus:outline-none transition-colors"
+                title={showPassword ? 'Hide password' : 'Show password'}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            }
             required
           />
 
