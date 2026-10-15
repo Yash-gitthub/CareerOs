@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { User, Mail, Lock, Phone, Camera, Eye, EyeOff } from 'lucide-react';
-import { useOnboarding, needsPassword } from '../../context/OnboardingContext';
+import { User, Mail, Phone, Camera } from 'lucide-react';
+import { useOnboarding } from '../../context/OnboardingContext';
 import { FormField } from '../common/FormField';
-import { PasswordStrength } from '../common/PasswordStrength';
 import { StepHeader } from '../common/StepHeader';
 import { StepNavigation } from '../common/StepNavigation';
 import { ProgressBar } from '../common/ProgressBar';
@@ -16,10 +15,6 @@ const AVATAR_PRESETS = [
 
 export const Step1Profile: React.FC = () => {
   const { user, updateUser, errors, clearError, nextStep, prevStep, isAuthenticating } = useOnboarding();
-  const showPasswordFields = needsPassword(user);
-  const accountCreated = user.accountType === 'cloud';
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [customAvatar, setCustomAvatar] = useState<string | null>(null);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,6 +42,11 @@ export const Step1Profile: React.FC = () => {
         />
 
         <div className="space-y-6">
+          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
+            <Mail className="w-3.5 h-3.5" />
+            <span>Signed in as <strong className="text-slate-700">{user.email}</strong></span>
+          </div>
+
           {/* Profile Photo Selector */}
           <div className="flex flex-col sm:flex-row items-center gap-5 p-4 rounded-xl bg-slate-50 border border-slate-200/70">
             <div className="relative group">
@@ -124,90 +124,11 @@ export const Step1Profile: React.FC = () => {
             required
           />
 
-          {/* Email Address */}
-          <FormField
-            label="Email Address"
-            type="email"
-            placeholder="e.g. alex.chen@engineering.edu"
-            value={user.email}
-            error={errors.email}
-            onChange={(e) => {
-              updateUser({ email: e.target.value });
-              clearError('email');
-            }}
-            readOnly={accountCreated}
-            helperText={
-              accountCreated
-                ? 'Your account is created with this email.'
-                : showPasswordFields
-                ? "We'll send a confirmation link, career roadmaps and verification updates here."
-                : 'Cloud accounts are not configured — your profile is stored in this browser only.'
-            }
-            leftIcon={<Mail className="w-4 h-4" />}
-            required
-          />
-
-          {/* Password & Confirm Password (only when creating a real account) */}
-          {showPasswordFields && (
-          <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <FormField
-              label="Password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Min. 8 characters"
-              value={user.password || ''}
-              error={errors.password}
-              onChange={(e) => {
-                updateUser({ password: e.target.value });
-                clearError('password');
-              }}
-              leftIcon={<Lock className="w-4 h-4" />}
-              rightElement={
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              }
-              required
-            />
-
-            <FormField
-              label="Confirm Password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              placeholder="Re-enter password"
-              value={user.confirmPassword || ''}
-              error={errors.confirmPassword}
-              onChange={(e) => {
-                updateUser({ confirmPassword: e.target.value });
-                clearError('confirmPassword');
-              }}
-              leftIcon={<Lock className="w-4 h-4" />}
-              rightElement={
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="text-slate-400 hover:text-slate-600 p-1"
-                >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              }
-              required
-            />
-          </div>
-
-          {/* Password Live Strength Checker */}
-          <PasswordStrength password={user.password || ''} />
-          </>
-          )}
-
           {/* Phone Number */}
           <FormField
             label="Phone Number"
             type="tel"
-            placeholder="+91 98765 43210"
+            placeholder="Enter your phone number"
             value={user.phone}
             error={errors.phone}
             onChange={(e) => {
@@ -219,19 +140,13 @@ export const Step1Profile: React.FC = () => {
             required
           />
 
-          {/* Automatically determined system fields preview */}
-          <div className="flex items-center justify-between text-[11px] text-slate-400 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-            <span>Account ID: <strong className="text-slate-600">{user.id}</strong></span>
-            <span>Source: <strong className="text-slate-600">{user.registrationSource}</strong></span>
-            <span>Created: <strong className="text-slate-600">{new Date(user.createdAt).toLocaleDateString()}</strong></span>
-          </div>
         </div>
 
         <StepNavigation
           onBack={prevStep}
           onNext={nextStep}
           isSubmitting={isAuthenticating}
-          nextLabel={showPasswordFields ? 'Create Account & Continue' : 'Continue to Education'}
+          nextLabel="Continue to Education"
         />
       </div>
     </div>

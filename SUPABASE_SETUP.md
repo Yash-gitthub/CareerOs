@@ -19,6 +19,11 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_FWcQOlCFTXEWAZn9hfD5uw_uFFhJAAZ
 
 ## 2. SQL Schema & Triggers (Supabase Dashboard)
 
+> **Required:** after the script below, also run [`supabase/setup_accounts.sql`](supabase/setup_accounts.sql).
+> It grants signed-in users access to their own rows, fixes the profile update policy (`WITH CHECK`),
+> and creates `career_states` (roadmap, tasks, projects…) and the detailed `assessment_results` table.
+> Without it, sign-in cannot load a saved profile and the app asks for it again.
+
 Run this SQL in your [Supabase SQL Editor](https://supabase.com/dashboard/project/nqbkzpntwoetwmywrbzy):
 
 ```sql

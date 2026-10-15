@@ -5,6 +5,7 @@ import { Footer } from './components/common/Footer';
 import { WelcomeScreen } from './components/auth/WelcomeScreen';
 import { RoleSelection } from './components/auth/RoleSelection';
 import { LoginModal } from './components/auth/LoginModal';
+import { SignUpScreen } from './components/auth/SignUpScreen';
 import { MentorPlacementRegister } from './components/auth/MentorPlacementRegister';
 import { Step1Profile } from './components/onboarding/Step1Profile';
 import { Step2Education } from './components/onboarding/Step2Education';
@@ -16,16 +17,25 @@ import { Step7Review } from './components/onboarding/Step7Review';
 import { CareerTwinSetup } from './components/onboarding/CareerTwinSetup';
 import { StudentDashboard } from './components/dashboard/StudentDashboard';
 import { CareerProvider } from './store/CareerStore';
-import { isPreview } from './lib/preview';
+import { isSupabaseConfigured } from './lib/supabase';
+
+// CareerOS needs a Supabase project for accounts and data; there is no offline/demo mode.
+const SupabaseNotConfigured: React.FC = () => (
+  <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="max-w-md bg-white border border-slate-200 rounded-2xl p-8 shadow-card text-center space-y-3">
+      <h1 className="text-3xl text-slate-900">Supabase is <span className="accent-italic">not configured.</span></h1>
+      <p className="text-sm text-slate-600 leading-relaxed">
+        Add <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to a <code>.env</code> file
+        in the project folder (see <code>.env.example</code>), then restart the dev server.
+      </p>
+    </div>
+  </div>
+);
 
 const MainRouter: React.FC = () => {
-  const { currentScreen, authNotice, clearAuthNotice, loginAsDemoUser } = useOnboarding();
+  const { currentScreen, authNotice, clearAuthNotice } = useOnboarding();
 
-  // Dev preview links need a dashboard to show; fall back to the demo profile if there isn't one.
-  React.useEffect(() => {
-    if (isPreview() && currentScreen !== 'dashboard') loginAsDemoUser();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  if (!isSupabaseConfigured) return <SupabaseNotConfigured />;
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -33,6 +43,8 @@ const MainRouter: React.FC = () => {
         return <WelcomeScreen />;
       case 'role-selection':
         return <RoleSelection />;
+      case 'signup':
+        return <SignUpScreen />;
       case 'login':
         return <LoginModal />;
       case 'mentor-registration':

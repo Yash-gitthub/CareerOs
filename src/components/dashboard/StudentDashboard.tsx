@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { clsx } from 'clsx';
 import {
   Compass, Sparkles, ArrowRight, Code2, Building, Target, Map as MapIcon, Flame, History,
@@ -18,6 +18,7 @@ import { JourneyCard, LockedFeature } from './journey';
 import { FEATURE_JOURNEY, isUnlocked } from '../../engine/unlocks';
 import { latestAssessment } from '../../engine/skillGap';
 import { isPreview } from '../../lib/preview';
+import { OPEN_ROADMAP_KEY } from '../../store/keys';
 import { CareerTwinDrawer } from './CareerTwinDrawer';
 import { Card, CardHeader, EmptyState, Meter } from './ui';
 import { InterventionBanner, SkillGapColumns, useReadinessDelta } from './insights';
@@ -161,13 +162,41 @@ const Overview: React.FC<{ openAssessment: () => void; openTwin: () => void }> =
   );
 };
 
+// Waits for the account's career data to arrive from Supabase before showing anything,
+// so the skill test gate never flashes for a student who already took it.
 export const StudentDashboard: React.FC = () => {
+  const { cloudStatus } = useCareer();
+  if (cloudStatus === 'loading') {
+    return (
+      <div className="max-w-md mx-auto px-4 py-24 text-center space-y-3" role="status">
+        <span className="status-dot" aria-hidden="true" />
+        <h1 className="text-3xl text-slate-900">Loading your <span className="accent-italic">Career Twin.</span></h1>
+        <p className="text-sm text-slate-600">Fetching your roadmap, tasks and test results from your account…</p>
+      </div>
+    );
+  }
+  return <DashboardBody />;
+};
+
+const DashboardBody: React.FC = () => {
   const { user } = useOnboarding();
-  const { state, twin, activeTab, setActiveTab } = useCareer();
+  const { state, twin, activeTab, setActiveTab, cloudError } = useCareer();
   const [isAssessmentOpen, setIsAssessmentOpen] = useState(false);
   const [isTwinDrawerOpen, setIsTwinDrawerOpen] = useState(false);
   const [verifying, setVerifying] = useState(state.assessments.length === 0);
   const { last, prev } = useReadinessDelta();
+
+  // Right after sign-in, open the roadmap (when the student has unlocked it).
+  const roadmapUnlocked = isUnlocked(state, 'roadmap');
+  useEffect(() => {
+    try {
+      if (!sessionStorage.getItem(OPEN_ROADMAP_KEY)) return;
+      sessionStorage.removeItem(OPEN_ROADMAP_KEY);
+    } catch {
+      return;
+    }
+    if (roadmapUnlocked) setActiveTab('roadmap');
+  }, [roadmapUnlocked, setActiveTab]);
 
   const firstName = user.fullName ? user.fullName.split(' ')[0] : 'Engineer';
   const dreamCompany = user.career.dreamCompany || 'Top Tech Companies';
@@ -243,6 +272,12 @@ export const StudentDashboard: React.FC = () => {
       {preview && (
         <div role="status" className="p-3 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
           <strong>Preview mode (development only).</strong> The skill test and feature locks are bypassed in this browser tab. Remove <code>?preview</code> from the URL to see the normal flow.
+        </div>
+      )}
+
+      {cloudError && (
+        <div role="status" className="p-3 px-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900">
+          <strong>Your progress isn't syncing with your account</strong> ({cloudError}). It is kept on this device for now.
         </div>
       )}
 

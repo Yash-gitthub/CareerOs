@@ -50,7 +50,8 @@ export const RoleSelection: React.FC = () => {
   const handleContinue = () => {
     updateUser({ role: selectedRole });
     if (selectedRole === 'student') {
-      setCurrentScreen('step-1-profile');
+      // Students create their account first; onboarding is saved to it step by step.
+      setCurrentScreen(user.accountType === 'cloud' ? 'step-1-profile' : 'signup');
     } else {
       setCurrentScreen('mentor-registration');
     }

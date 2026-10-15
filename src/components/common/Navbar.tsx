@@ -1,14 +1,13 @@
 import React from 'react';
-import { Compass, LogIn, LogOut, RefreshCw, UserCheck } from 'lucide-react';
+import { Compass, LogIn, LogOut } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { Button } from './Button';
 import { NotificationCenter } from './NotificationCenter';
 
 export const Navbar: React.FC = () => {
-  const { currentScreen, setCurrentScreen, resetAll, loginAsDemoUser, user, isSyncing, dbStatus, syncToDatabase } = useOnboarding();
+  const { currentScreen, setCurrentScreen, resetAll, user, isSyncing, dbStatus, syncToDatabase } = useOnboarding();
 
   const isAuthOrOnboarding = currentScreen !== 'dashboard';
-  const isCloudAccount = user.accountType === 'cloud';
 
   return (
     <header className="sticky top-0 z-40 bg-slate-50/85 backdrop-blur-md border-b border-slate-200/70">
@@ -36,7 +35,6 @@ export const Navbar: React.FC = () => {
           {currentScreen === 'dashboard' ? (
             <div className="flex items-center gap-2 sm:gap-3">
               <NotificationCenter />
-              {isCloudAccount ? (
               <button
                 type="button"
                 onClick={() => syncToDatabase()}
@@ -51,14 +49,6 @@ export const Navbar: React.FC = () => {
                 <span className={`w-2 h-2 rounded-full ${isSyncing ? 'bg-amber-500 animate-ping' : dbStatus === 'synced' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                 <span>{isSyncing ? 'Syncing...' : dbStatus === 'synced' ? 'Cloud Synced' : 'Sync to Supabase'}</span>
               </button>
-              ) : (
-                <span
-                  title="This profile is stored only in this browser"
-                  className="hidden md:inline-block px-3 py-1 rounded-full text-[11px] font-medium border bg-amber-50 border-amber-200 text-amber-800"
-                >
-                  {user.accountType === 'demo' ? 'Demo sandbox · not synced' : 'Local only · not synced'}
-                </span>
-              )}
 
               <div className="hidden sm:flex items-center gap-2 pl-1 pr-3 py-1 border border-slate-200 bg-white rounded-full text-xs text-slate-700">
                 <span className="w-6 h-6 rounded-full bg-indigo-100 border border-indigo-200 text-indigo-700 font-display text-xs flex items-center justify-center" aria-hidden="true">
@@ -72,25 +62,21 @@ export const Navbar: React.FC = () => {
                 variant="outline"
                 size="sm"
                 onClick={() => resetAll()}
-                leftIcon={isCloudAccount ? <LogOut className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                leftIcon={<LogOut className="w-3.5 h-3.5" />}
               >
-                {isCloudAccount ? 'Sign out' : 'Restart Demo'}
+                Sign out
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => loginAsDemoUser()}
-                title="Quick demo with filled sample profile"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-900 border border-slate-200 hover:border-slate-300 bg-white/60 hover:bg-white rounded-full transition-colors"
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Demo Student Profile</span>
-                <span className="sm:hidden">Demo</span>
-              </button>
-
-              {currentScreen !== 'login' && (
+              {user.accountType === 'cloud' ? (
+                <>
+                  <span className="hidden sm:inline text-xs text-slate-500">{user.email}</span>
+                  <Button variant="outline" size="sm" onClick={() => resetAll()} leftIcon={<LogOut className="w-3.5 h-3.5" />}>
+                    Sign out
+                  </Button>
+                </>
+              ) : currentScreen !== 'login' && (
                 <Button
                   variant="ghost"
                   size="sm"

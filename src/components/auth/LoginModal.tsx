@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Mail, Lock, LogIn, UserCheck, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
 import { useOnboarding } from '../../context/OnboardingContext';
 import { FormField } from '../common/FormField';
 import { Button } from '../common/Button';
 
 export const LoginModal: React.FC = () => {
-  const { setCurrentScreen, loginAsDemoUser, loginWithEmail } = useOnboarding();
+  const { setCurrentScreen, loginWithEmail } = useOnboarding();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -25,7 +25,7 @@ export const LoginModal: React.FC = () => {
     const res = await loginWithEmail(email.trim(), password);
     setIsLoading(false);
     if (!res.success) {
-      setError(res.error || 'Failed to sign in. Please verify your credentials or use Demo Sign-in.');
+      setError(res.error || 'Failed to sign in. Please check your email and password.');
     }
   };
 
@@ -50,7 +50,8 @@ export const LoginModal: React.FC = () => {
           <FormField
             label="Email Address"
             type="email"
-            placeholder="e.g. alex.chen@engineering.edu"
+            placeholder="Enter your email"
+            autoComplete="email"
             value={email}
             onChange={(e) => {
               setEmail(e.target.value);
@@ -110,17 +111,14 @@ export const LoginModal: React.FC = () => {
           </Button>
         </form>
 
-        {/* Demo Fast Login */}
-        <div className="pt-2 border-t border-slate-100 text-center space-y-3">
-          <p className="text-xs text-slate-400">Testing the experience?</p>
-          <button
-            type="button"
-            onClick={loginAsDemoUser}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors"
-          >
-            <UserCheck className="w-4 h-4" />
-            <span>Instant Demo Sign-in (Pre-filled Profile)</span>
-          </button>
+        {/* New account */}
+        <div className="pt-2 border-t border-slate-100 text-center">
+          <p className="text-xs text-slate-500">
+            New to CareerOS?{' '}
+            <button type="button" onClick={() => setCurrentScreen('role-selection')} className="font-semibold text-indigo-600 hover:text-indigo-700">
+              Create an account
+            </button>
+          </p>
         </div>
 
         {/* Back Link */}

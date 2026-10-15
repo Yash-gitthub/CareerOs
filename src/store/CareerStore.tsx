@@ -22,13 +22,19 @@ import { LEARNING_RESOURCES } from '../data/learningResources';
 import { syncGitHub as fetchGitHub, SyncError } from '../integrations/github';
 import { syncLeetCode as fetchLeetCode, manualLeetCode } from '../integrations/leetcode';
 import { CAREER_STATE_PREFIX, DASHBOARD_TAB_KEY } from './keys';
+import { fetchCareerState, saveCareerState } from '../lib/supabase';
 import { previewTab } from '../lib/preview';
 
 type EventType = ActivityEvent['type'];
 type Mutator = (draft: CareerState, now: Date) => void;
 
+// Supabase copy of the career data: 'loading' until it has been checked after sign-in.
+export type CloudStatus = 'idle' | 'loading' | 'ready' | 'error';
+
 interface CareerContextValue {
   state: CareerState;
+  cloudStatus: CloudStatus;
+  cloudError: string | null;
   twin: CareerTwin;
   activeTab: DashboardTab;
   setActiveTab: (tab: DashboardTab) => void;
@@ -99,28 +105,37 @@ const CareerContext = createContext<CareerContextValue | undefined>(undefined);
 
 const storageKey = (userId: string) => `${CAREER_STATE_PREFIX}${userId}`;
 
+// Validates and upgrades a saved career state (from this device or from Supabase).
+const normalizeState = (parsed: CareerState | null | undefined): CareerState | null => {
+  if (!parsed || parsed.schema !== 1) return null;
+  // Integrations never stay stuck in "syncing" after a reload.
+  if (parsed.github.status === 'syncing') parsed.github.status = parsed.github.snapshot ? 'connected' : 'idle';
+  if (parsed.leetcode.status === 'syncing') parsed.leetcode.status = parsed.leetcode.snapshot ? 'connected' : 'idle';
+  // Saves from before progressive unlocking: grant what their activity already earned, quietly.
+  if (!Array.isArray(parsed.unlockedTabs) || !Array.isArray(parsed.visitedTabs)) {
+    parsed.unlockedTabs = [];
+    parsed.visitedTabs = parsed.roadmap ? ['roadmap'] : [];
+    applyUnlocks(parsed);
+  }
+  return parsed;
+};
+
 const loadState = (userId: string, profile: Parameters<typeof createInitialCareerState>[0]): CareerState => {
   try {
     const raw = localStorage.getItem(storageKey(userId));
-    if (raw) {
-      const parsed = JSON.parse(raw) as CareerState;
-      if (parsed.schema === 1) {
-        // Integrations never stay stuck in "syncing" after a reload.
-        if (parsed.github.status === 'syncing') parsed.github.status = parsed.github.snapshot ? 'connected' : 'idle';
-        if (parsed.leetcode.status === 'syncing') parsed.leetcode.status = parsed.leetcode.snapshot ? 'connected' : 'idle';
-        // Saves from before progressive unlocking: grant what their activity already earned, quietly.
-        if (!Array.isArray(parsed.unlockedTabs) || !Array.isArray(parsed.visitedTabs)) {
-          parsed.unlockedTabs = [];
-          parsed.visitedTabs = parsed.roadmap ? ['roadmap'] : [];
-          applyUnlocks(parsed);
-        }
-        return parsed;
-      }
-    }
+    const parsed = raw ? normalizeState(JSON.parse(raw) as CareerState) : null;
+    if (parsed) return parsed;
   } catch {
     // Corrupt or unavailable storage: start fresh.
   }
   return createInitialCareerState(profile);
+};
+
+// Time of the student's last real action. Automatic housekeeping (reconcile) doesn't count,
+// so a fresh device never looks "newer" than the Supabase copy.
+const lastActivity = (s: CareerState): number => {
+  const event = s.events.find(e => e.type !== 'system.reconcile');
+  return event ? Date.parse(event.createdAt) || 0 : 0;
 };
 
 const loadTab = (): DashboardTab => {
@@ -143,10 +158,17 @@ export const CareerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [activeTab, setActiveTabState] = useState<DashboardTab>(loadTab);
   const [tick, setTick] = useState(0);
 
+  const isCloud = user.accountType === 'cloud';
+  const [cloudStatus, setCloudStatus] = useState<CloudStatus>(isCloud ? 'loading' : 'idle');
+  const [cloudError, setCloudError] = useState<string | null>(null);
+  // Uploads are allowed only after the Supabase copy for this account has been checked.
+  const cloudCheckedFor = useRef<string | null>(null);
+
   // Switch state when the signed-in profile changes.
   if (loadedFor !== user.id) {
     setLoadedFor(user.id);
     setState(loadState(user.id, user));
+    setCloudStatus(isCloud ? 'loading' : 'idle');
   }
 
   useEffect(() => {
@@ -156,6 +178,50 @@ export const CareerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // Quota or private mode — state remains in memory for this session.
     }
   }, [state, loadedFor]);
+
+  // Load the career data saved in Supabase for this account. Supabase wins unless this device
+  // has newer activity that never reached it.
+  useEffect(() => {
+    cloudCheckedFor.current = null;
+    if (!isCloud) {
+      setCloudStatus('idle');
+      return;
+    }
+    let cancelled = false;
+    const userId = user.id;
+    setCloudStatus('loading');
+    fetchCareerState(userId).then(remote => {
+      if (cancelled) return;
+      if (remote.status === 'error') {
+        setCloudError(remote.error);
+        setCloudStatus('error');
+        return;
+      }
+      if (remote.status === 'found') {
+        const incoming = normalizeState(remote.state as CareerState);
+        if (incoming) setState(local => (lastActivity(local) > lastActivity(incoming) ? local : incoming));
+      }
+      cloudCheckedFor.current = userId;
+      setCloudError(null);
+      setCloudStatus('ready');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user.id, isCloud]);
+
+  // Save every change to Supabase (debounced).
+  useEffect(() => {
+    if (!isCloud || cloudStatus !== 'ready' || cloudCheckedFor.current !== loadedFor || loadedFor !== user.id) return;
+    const userId = loadedFor;
+    const timer = window.setTimeout(() => {
+      saveCareerState(userId, state).then(res => {
+        if (res.success) setCloudError(null);
+        else setCloudError(res.error || 'Unknown error');
+      });
+    }, 1500);
+    return () => window.clearTimeout(timer);
+  }, [state, loadedFor, user.id, isCloud, cloudStatus]);
 
   const setActiveTab = useCallback((tab: DashboardTab) => {
     setActiveTabState(tab);
@@ -298,6 +364,8 @@ export const CareerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ---------- actions ----------
   const value: CareerContextValue = {
     state,
+    cloudStatus,
+    cloudError,
     twin,
     activeTab,
     setActiveTab,

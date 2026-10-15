@@ -94,7 +94,7 @@ export const MentorPlacementRegister: React.FC = () => {
             <FormField
               label="Official Institutional Email"
               type="email"
-              placeholder="name@college.edu.in"
+              placeholder="Enter your work email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               leftIcon={<Mail className="w-4 h-4" />}
@@ -123,7 +123,7 @@ export const MentorPlacementRegister: React.FC = () => {
               <FormField
                 label="Contact Phone"
                 type="tel"
-                placeholder="+91 98765 43210"
+                placeholder="Enter your phone number"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 leftIcon={<Phone className="w-4 h-4" />}

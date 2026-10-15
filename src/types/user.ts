@@ -56,12 +56,12 @@ export interface CareerTwinState {
   consistencyScore: string | null;
   status: 'pending_assessment' | 'ready' | 'analyzing';
   lastUpdated: string;
+  onboardingStep?: OnboardingScreen; // last onboarding screen reached, so sign-in can resume there
 }
 
-// 'cloud': backed by a Supabase Auth account (id === auth.users.id)
-// 'local': Supabase not configured; data lives only in this browser
-// 'demo':  sandbox session, never synced
-export type AccountType = 'cloud' | 'local' | 'demo';
+// 'cloud': backed by a Supabase Auth account (id === auth.users.id).
+// Unset while a new student is filling in step 1, before their account is created.
+export type AccountType = 'cloud';
 
 export interface UserProfile {
   id: string;
@@ -86,6 +86,7 @@ export interface UserProfile {
 export type OnboardingScreen =
   | 'welcome'
   | 'role-selection'
+  | 'signup'
   | 'login'
   | 'mentor-registration'
   | 'step-1-profile'

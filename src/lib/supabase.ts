@@ -1,5 +1,6 @@
 import { createClient, type Session } from '@supabase/supabase-js';
 import type { UserProfile } from '../types/user';
+import type { AssessmentResult } from '../engine/types';
 
 const rawSupabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
 const supabaseUrl = rawSupabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
@@ -131,8 +132,13 @@ export const syncProfileToSupabase = async (user: UserProfile): Promise<{ succes
   }
 };
 
+// Error from the most recent fetchOwnProfile call (null when it succeeded or found no row),
+// so callers can tell "no profile yet" apart from "Supabase refused the request".
+export let lastProfileFetchError: string | null = null;
+
 // Fetch the signed-in user's own profile. RLS guarantees only that row is visible.
 export const fetchOwnProfile = async (userId: string): Promise<UserProfile | null> => {
+  lastProfileFetchError = null;
   if (!isSupabaseConfigured) return null;
 
   try {
@@ -142,9 +148,11 @@ export const fetchOwnProfile = async (userId: string): Promise<UserProfile | nul
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
+      lastProfileFetchError = error.message;
       return null;
     }
+    if (!data) return null;
 
     const profile: UserProfile = {
       id: data.id,
@@ -175,7 +183,44 @@ export const fetchOwnProfile = async (userId: string): Promise<UserProfile | nul
     return profile;
   } catch (err) {
     console.warn('Error fetching profile from Supabase:', err);
+    lastProfileFetchError = toMessage(err);
     return null;
+  }
+};
+
+// ---------- Career data (roadmap, tasks, assessments, projects …) ----------
+// Stored as one JSON document per user in `career_states` (owner-only via RLS).
+
+export type RemoteCareerState =
+  | { status: 'found'; state: unknown; updatedAt: string }
+  | { status: 'none' }
+  | { status: 'error'; error: string };
+
+export const fetchCareerState = async (userId: string): Promise<RemoteCareerState> => {
+  if (!isSupabaseConfigured) return { status: 'error', error: 'Supabase not configured' };
+  try {
+    const { data, error } = await supabase
+      .from('career_states')
+      .select('state, updated_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) return { status: 'error', error: error.message };
+    if (!data) return { status: 'none' };
+    return { status: 'found', state: data.state, updatedAt: data.updated_at };
+  } catch (err) {
+    return { status: 'error', error: toMessage(err) };
+  }
+};
+
+export const saveCareerState = async (userId: string, state: unknown): Promise<{ success: boolean; error?: string }> => {
+  if (!isSupabaseConfigured) return { success: false, error: 'Supabase not configured' };
+  try {
+    const { error } = await supabase
+      .from('career_states')
+      .upsert({ user_id: userId, state, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+    return error ? { success: false, error: error.message } : { success: true };
+  } catch (err) {
+    return { success: false, error: toMessage(err) };
   }
 };
 
@@ -208,12 +253,13 @@ export const submitMentorRegistration = async (data: MentorRegistrationData) => 
   }
 };
 
-// Record assessment result (owner-only via RLS; skipped when not signed in)
+// Record a completed skill test with its full details (owner-only via RLS; skipped when not signed in).
 export const recordAssessmentResult = async (params: {
   userId: string;
   targetRole: string;
   score: number;
   totalQuestions: number;
+  result: AssessmentResult;
 }) => {
   if (!isSupabaseConfigured) return { success: false };
 
@@ -227,7 +273,15 @@ export const recordAssessmentResult = async (params: {
         user_id: session.user.id,
         target_role: params.targetRole,
         score: params.score,
-        total_questions: params.totalQuestions
+        total_questions: params.totalQuestions,
+        attempt_id: params.result.id,
+        domain: params.result.domain,
+        completed_at: params.result.completedAt,
+        section_scores: params.result.sectionScores,
+        topic_scores: params.result.topicScores,
+        communication: params.result.communication,
+        skill_checks: params.result.skillChecks || [],
+        answers: params.result.answers,
       }]);
 
     if (error) {

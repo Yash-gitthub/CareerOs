@@ -3,6 +3,7 @@ import type { UserProfile, OnboardingScreen, SelectedSkill, SkillProficiency } f
 import {
   syncProfileToSupabase,
   fetchOwnProfile,
+  lastProfileFetchError,
   signUpWithEmail,
   signInWithEmail,
   signOut,
@@ -10,11 +11,22 @@ import {
   isSupabaseConfigured,
   supabase
 } from '../lib/supabase';
-import { clearAllCareerState } from '../store/keys';
+import { clearAllCareerState, OPEN_ROADMAP_KEY } from '../store/keys';
+
+const openRoadmapAfterSignIn = () => {
+  try {
+    sessionStorage.setItem(OPEN_ROADMAP_KEY, '1');
+  } catch {
+    // Storage unavailable: the dashboard opens on its last tab instead.
+  }
+};
 
 
 const STORAGE_KEY = 'ai_careeros_user_profile';
 const SCREEN_KEY = 'ai_careeros_active_screen';
+// Per-account copy of a completed cloud profile. Kept on sign-out (like career data) so signing
+// back in on this device restores it even if the Supabase copy is missing or incomplete.
+const PROFILE_CACHE_PREFIX = 'careeros_profile_cache_';
 
 // Credentials must never reach localStorage or the database.
 const sanitizeForStorage = (profile: UserProfile): UserProfile => {
@@ -24,15 +36,32 @@ const sanitizeForStorage = (profile: UserProfile): UserProfile => {
   return copy;
 };
 
-// A password is only collected when it will create a real Supabase account.
-export const needsPassword = (profile: UserProfile): boolean =>
-  isSupabaseConfigured && profile.accountType !== 'cloud' && profile.accountType !== 'demo';
+// Password rules for new accounts. Returns an error message, or null when the password is acceptable.
+export const passwordProblem = (password: string): string | null => {
+  if (!password) return 'Please create a password for your account.';
+  if (password.length < 8) return 'Password must be at least 8 characters long.';
+  if (!/[0-9]/.test(password) || !/[!@#$%^&*(),.?":{}|<>]/.test(password)) return 'Include at least one number and one special character.';
+  return null;
+};
+
+const ONBOARDING_SCREENS: OnboardingScreen[] = [
+  'step-1-profile', 'step-2-education', 'step-3-skills', 'step-4-career',
+  'step-5-goals', 'step-6-preferences', 'step-7-review', 'twin-generation',
+];
 
 const isOnboardingComplete = (profile: UserProfile) => profile.careerTwin?.status === 'ready';
 
+const loadCachedProfile = (userId: string): UserProfile | null => {
+  try {
+    const raw = localStorage.getItem(PROFILE_CACHE_PREFIX + userId);
+    return raw ? (JSON.parse(raw) as UserProfile) : null;
+  } catch {
+    return null;
+  }
+};
+
 const createInitialProfile = (): UserProfile => ({
   id: 'usr_' + Math.random().toString(36).substring(2, 9),
-  accountType: isSupabaseConfigured ? undefined : 'local',
   fullName: '',
   email: '',
   password: '',
@@ -87,6 +116,20 @@ const createInitialProfile = (): UserProfile => ({
   }
 });
 
+// A profile row created by the signup trigger has empty JSON objects; fill every field the UI relies on.
+const withProfileDefaults = (profile: UserProfile): UserProfile => {
+  const base = createInitialProfile();
+  return {
+    ...base,
+    ...profile,
+    education: { ...base.education, ...profile.education },
+    skills: { ...base.skills, ...profile.skills },
+    career: { ...base.career, ...profile.career },
+    learningPreferences: { ...base.learningPreferences, ...profile.learningPreferences },
+    careerTwin: { ...base.careerTwin, ...profile.careerTwin },
+  };
+};
+
 interface ValidationErrors {
   [key: string]: string;
 }
@@ -112,8 +155,8 @@ interface OnboardingContextType {
   goToStep: (stepNumber: number) => void;
   resetAll: () => Promise<void>;
   completeOnboarding: () => void;
-  loginAsDemoUser: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  createAccount: (fullName: string, email: string, password: string) => Promise<{ success: boolean; error?: string; needsConfirmation?: boolean }>;
   syncToDatabase: (overrideUser?: UserProfile) => Promise<boolean>;
   isSyncing: boolean;
   isAuthenticating: boolean;
@@ -124,24 +167,28 @@ interface OnboardingContextType {
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined);
 
+// Profile saved on this device. Demo and local-only profiles from older builds are dropped:
+// every account is now a Supabase account.
+const readSavedProfile = (): UserProfile | null => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return null;
+    // Older builds persisted the password; drop it on load.
+    const profile = sanitizeForStorage(JSON.parse(saved));
+    const legacyType = (profile as { accountType?: string }).accountType;
+    return legacyType === 'demo' || legacyType === 'local' ? null : profile;
+  } catch {
+    return null;
+  }
+};
+
 export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<UserProfile>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        // Older builds persisted the password; drop it on load.
-        return sanitizeForStorage(JSON.parse(saved));
-      }
-    } catch {
-      // Fallback
-    }
-    return createInitialProfile();
-  });
+  const [user, setUser] = useState<UserProfile>(() => readSavedProfile() || createInitialProfile());
 
   const [currentScreen, setCurrentScreen] = useState<OnboardingScreen>(() => {
     try {
       const saved = localStorage.getItem(SCREEN_KEY);
-      if (saved) {
+      if (saved && readSavedProfile()) {
         return saved as OnboardingScreen;
       }
     } catch {
@@ -160,6 +207,9 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeForStorage(user)));
+      if (user.accountType === 'cloud' && isOnboardingComplete(user)) {
+        localStorage.setItem(PROFILE_CACHE_PREFIX + user.id, JSON.stringify(sanitizeForStorage(user)));
+      }
     } catch (e) {
       console.warn('Could not save profile to localStorage', e);
     }
@@ -177,6 +227,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   useEffect(() => {
     userRef.current = user;
   }, [user]);
+  const screenRef = useRef(currentScreen);
+  useEffect(() => {
+    screenRef.current = currentScreen;
+  }, [currentScreen]);
 
   // Set while we sign out on purpose, so the auth listener doesn't also reset state.
   const intentionalSignOut = useRef(false);
@@ -195,13 +249,17 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     if (!isSupabaseConfigured) return;
     let cancelled = false;
 
-    getSession().then(session => {
+    getSession().then(async session => {
       if (cancelled) return;
       const current = userRef.current;
-      if (current.accountType !== 'cloud') return;
-      if (!session || session.user.id !== current.id) {
-        setCurrentScreen(prev => (prev === 'dashboard' ? 'login' : prev));
+      if (!session) {
+        if (current.accountType === 'cloud') setCurrentScreen(prev => (prev === 'dashboard' ? 'login' : prev));
+        return;
       }
+      // Mid-onboarding: stay on the current step.
+      const onboarding = screenRef.current.startsWith('step-') || screenRef.current === 'twin-generation';
+      if (onboarding && (current.accountType !== 'cloud' || current.id === session.user.id)) return;
+      await openAccountRef.current(session.user.id, session.user.email || '', false);
     });
 
     const { data: subscription } = supabase.auth.onAuthStateChange(event => {
@@ -314,25 +372,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       if (!user.fullName.trim()) {
         newErrors.fullName = 'Please enter your full name to get started.';
       }
-      if (!user.email.trim()) {
-        newErrors.email = 'Please enter your email address.';
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)) {
-        newErrors.email = "That email doesn't look right. Check it and try again.";
-      }
-      
-      if (needsPassword(user)) {
-        if (!user.password) {
-          newErrors.password = 'Please create a password for your account.';
-        } else if (user.password.length < 8) {
-          newErrors.password = 'Password must be at least 8 characters long.';
-        } else if (!/[0-9]/.test(user.password) || !/[!@#$%^&*(),.?":{}|<>]/.test(user.password)) {
-          newErrors.password = 'Include at least one number and one special character.';
-        }
-
-        if (user.password && user.password !== user.confirmPassword) {
-          newErrors.confirmPassword = "Passwords don't match. Please re-enter.";
-        }
-      }
 
       if (!user.phone.trim()) {
         newErrors.phone = 'Please enter a valid contact phone number.';
@@ -397,29 +436,12 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const nextStep = async () => {
     switch (currentScreen) {
       case 'step-1-profile': {
-        if (!validateStep(1)) break;
-
-        if (needsPassword(user)) {
-          setIsAuthenticating(true);
-          const res = await signUpWithEmail(user.email.trim(), user.password || '', user.fullName.trim());
-          setIsAuthenticating(false);
-
-          if (!res.success) {
-            setError('email', res.error);
-            break;
-          }
-
-          setUser(prev => sanitizeForStorage({ ...prev, id: res.userId, email: prev.email.trim(), accountType: 'cloud' }));
-          setAuthNotice(
-            res.hasSession
-              ? null
-              : `We sent a confirmation link to ${user.email.trim()}. Your progress is saved on this device and will sync to the cloud after you confirm and sign in.`
-          );
-        } else {
-          setUser(prev => sanitizeForStorage(prev));
+        // Onboarding belongs to an account; anyone here without one creates it first.
+        if (user.accountType !== 'cloud') {
+          setCurrentScreen('signup');
+          break;
         }
-
-        setCurrentScreen('step-2-education');
+        if (validateStep(1)) setCurrentScreen('step-2-education');
         break;
       }
       case 'step-2-education':
@@ -454,6 +476,7 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         setCurrentScreen('welcome');
         break;
       case 'mentor-registration':
+      case 'signup':
         setCurrentScreen('role-selection');
         break;
       case 'step-1-profile':
@@ -526,6 +549,10 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         return true;
       } else {
         setDbStatus('unsynced');
+        // "Not signed in" is expected while an email confirmation is pending; anything else is a real failure.
+        if (res.error && res.error !== 'Not signed in') {
+          setAuthNotice(`Your profile couldn't be saved to the cloud (${res.error}). It is still saved on this device.`);
+        }
         return false;
       }
     } catch {
@@ -536,52 +563,95 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }
   }, [user]);
 
+  // Opens a signed-in account. A completed profile goes straight to the dashboard: the Supabase
+  // copy is used first, then this device's copy (which is then pushed to Supabase).
+  // An unfinished profile continues onboarding with whatever Supabase already has.
+  const openAccount = async (userId: string, email: string, fromSignIn: boolean) => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const fetchedRaw = await fetchOwnProfile(userId);
+    const fetched = fetchedRaw ? withProfileDefaults(fetchedRaw) : null;
+    const local = userRef.current;
+    const sameAccount = (p: UserProfile | null) =>
+      Boolean(p && (p.id === userId || (normalizedEmail && p.email && p.email.trim().toLowerCase() === normalizedEmail)));
+
+    const cached = loadCachedProfile(userId);
+    const completed = [fetched, cached, sameAccount(local) ? local : null]
+      .find((p): p is UserProfile => Boolean(p && isOnboardingComplete(p)));
+    if (completed) {
+      const restored = withProfileDefaults({ ...sanitizeForStorage(completed), id: userId, accountType: 'cloud' });
+      setUser(restored);
+      setAuthNotice(null);
+      if (fromSignIn) openRoadmapAfterSignIn();
+      setCurrentScreen('dashboard');
+      if (completed === fetched) setDbStatus('synced');
+      else await syncToDatabase(restored);
+      return;
+    }
+
+    if (fetched) {
+      setUser({ ...fetched, email: fetched.email || normalizedEmail });
+      setAuthNotice(null);
+      const saved = fetched.careerTwin.onboardingStep;
+      setCurrentScreen(saved && ONBOARDING_SCREENS.includes(saved) ? saved : 'step-1-profile');
+      return;
+    }
+
+    // No Supabase profile visible: continue with this device's copy if it is the same account.
+    const adopted: UserProfile = sameAccount(local)
+      ? { ...sanitizeForStorage(local), id: userId, accountType: 'cloud' }
+      : { ...createInitialProfile(), id: userId, email: normalizedEmail, accountType: 'cloud' };
+    setUser(adopted);
+    // Say why, when Supabase refused to return the profile rather than having none.
+    setAuthNotice(lastProfileFetchError
+      ? `Couldn't load your saved profile from Supabase (${lastProfileFetchError}). The database permissions need to be set up: run supabase/setup_accounts.sql in the Supabase SQL Editor.`
+      : null);
+    setCurrentScreen(adopted.fullName ? 'step-2-education' : 'step-1-profile');
+  };
+  const openAccountRef = useRef(openAccount);
+  useEffect(() => {
+    openAccountRef.current = openAccount;
+  });
+
+  // Creates the Supabase account, then starts onboarding for it. The profile row is saved as the
+  // student fills in each step.
+  const createAccount = async (fullName: string, email: string, password: string): Promise<{ success: boolean; error?: string; needsConfirmation?: boolean }> => {
+    const normalizedEmail = email.trim().toLowerCase();
+    setIsAuthenticating(true);
+    try {
+      const res = await signUpWithEmail(normalizedEmail, password, fullName.trim());
+      if (!res.success) {
+        return {
+          success: false,
+          error: /already (registered|exists)/i.test(res.error)
+            ? 'An account with this email already exists. Sign in instead.'
+            : res.error,
+        };
+      }
+      if (!res.hasSession) {
+        // Email confirmation is switched on in Supabase: the student signs in after confirming.
+        return { success: true, needsConfirmation: true };
+      }
+      setUser({ ...createInitialProfile(), id: res.userId, email: normalizedEmail, fullName: fullName.trim(), role: 'student', accountType: 'cloud' });
+      setErrors({});
+      setAuthNotice(null);
+      setCurrentScreen('step-1-profile');
+      return { success: true };
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
   const loginWithEmail = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     const normalizedEmail = email.trim().toLowerCase();
-
-    // Local-only mode: there is no server to verify credentials, so sign-in can only
-    // reopen the profile already stored in this browser.
     if (!isSupabaseConfigured) {
-      if (user.email && user.email.toLowerCase() === normalizedEmail) {
-        setCurrentScreen(isOnboardingComplete(user) ? 'dashboard' : 'step-1-profile');
-        return { success: true };
-      }
-      return {
-        success: false,
-        error: 'Cloud accounts are not configured on this deployment. Only a profile created in this browser can be reopened.'
-      };
+      return { success: false, error: 'Supabase is not configured for this deployment.' };
     }
 
     setIsAuthenticating(true);
     try {
       const res = await signInWithEmail(normalizedEmail, password);
       if (!res.success) return res;
-
-      const fetched = await fetchOwnProfile(res.userId);
-      if (fetched) {
-        setUser(fetched);
-        setDbStatus('synced');
-        setAuthNotice(null);
-        setCurrentScreen(isOnboardingComplete(fetched) ? 'dashboard' : 'step-2-education');
-        return { success: true };
-      }
-
-      // No cloud profile yet (e.g. onboarding finished before the email was confirmed).
-      // Adopt the profile on this device if it belongs to the same email, otherwise start onboarding.
-      const local = userRef.current;
-      const adopted: UserProfile =
-        local.email && local.email.trim().toLowerCase() === normalizedEmail
-          ? { ...sanitizeForStorage(local), id: res.userId, accountType: 'cloud' }
-          : { ...createInitialProfile(), id: res.userId, email: normalizedEmail, accountType: 'cloud' };
-
-      setUser(adopted);
-      setAuthNotice(null);
-      if (isOnboardingComplete(adopted)) {
-        setCurrentScreen('dashboard');
-        await syncToDatabase(adopted);
-      } else {
-        setCurrentScreen(adopted.fullName ? 'step-2-education' : 'step-1-profile');
-      }
+      await openAccount(res.userId, normalizedEmail, true);
       return { success: true };
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
@@ -590,6 +660,21 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       setIsAuthenticating(false);
     }
   };
+
+  // Remember which onboarding step the student reached (saved with the profile).
+  useEffect(() => {
+    if (user.accountType !== 'cloud' || !ONBOARDING_SCREENS.includes(currentScreen)) return;
+    if (user.careerTwin.onboardingStep === currentScreen) return;
+    setUser(prev => ({ ...prev, careerTwin: { ...prev.careerTwin, onboardingStep: currentScreen } }));
+  }, [currentScreen, user.accountType, user.careerTwin.onboardingStep]);
+
+  // Keep the Supabase profile (education, skills incl. verified levels, goals…) in step with every
+  // change, from the first onboarding step onwards.
+  useEffect(() => {
+    if (user.accountType !== 'cloud') return;
+    const timer = window.setTimeout(() => { syncToDatabase(user); }, 1200);
+    return () => window.clearTimeout(timer);
+  }, [user, syncToDatabase]);
 
   const completeOnboarding = () => {
     const updatedUser: UserProfile = {
@@ -605,91 +690,6 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     syncToDatabase(updatedUser);
   };
 
-
-  // Sandbox profile with sample onboarding answers. Never synced; the Career Twin starts
-  // empty and is filled only by real activity (no fabricated strengths or scores).
-  const loginAsDemoUser = async () => {
-    if (user.accountType === 'cloud') {
-      await signOutIntentionally();
-    }
-    setAuthNotice(null);
-    setDbStatus('unsynced');
-    setUser({
-      ...createInitialProfile(),
-      id: 'demo_' + Math.random().toString(36).substring(2, 9),
-      accountType: 'demo',
-      registrationSource: 'Demo Sandbox',
-      fullName: 'Aarav Sharma',
-      email: 'aarav.sharma@example.com',
-      phone: '+91 98765 43210',
-      education: {
-        degree: 'B.E. (Bachelor of Engineering)',
-        branch: 'Computer Engineering',
-        year: 'Third Year (TE / 3rd Year)',
-        semester: 'Semester 6',
-        college: 'College of Engineering Pune (COEP)',
-        graduationYear: '2026',
-        cgpa: '8.85',
-        backlogs: 'None (All clear)',
-      },
-      skills: {
-        programming: [
-          { name: 'Python', category: 'programming', level: 'Advanced' },
-          { name: 'C++', category: 'programming', level: 'Intermediate' },
-          { name: 'JavaScript', category: 'programming', level: 'Intermediate' }
-        ],
-        web: [
-          { name: 'React', category: 'web', level: 'Intermediate' },
-          { name: 'FastAPI', category: 'web', level: 'Intermediate' },
-          { name: 'Node.js', category: 'web', level: 'Familiar' }
-        ],
-        database: [
-          { name: 'PostgreSQL', category: 'database', level: 'Intermediate' },
-          { name: 'Redis', category: 'database', level: 'Familiar' }
-        ],
-        aiMl: [
-          { name: 'Machine Learning', category: 'aiMl', level: 'Intermediate' },
-          { name: 'Deep Learning', category: 'aiMl', level: 'Familiar' },
-          { name: 'PyTorch', category: 'aiMl', level: 'Familiar' }
-        ],
-        cloudDevOps: [
-          { name: 'Docker', category: 'cloudDevOps', level: 'Familiar' },
-          { name: 'GitHub Actions', category: 'cloudDevOps', level: 'Intermediate' }
-        ],
-        coreCS: [
-          { name: 'DSA', category: 'coreCS', level: 'Advanced' },
-          { name: 'DBMS', category: 'coreCS', level: 'Intermediate' },
-          { name: 'Operating Systems', category: 'coreCS', level: 'Intermediate' }
-        ]
-      },
-      career: {
-        interestedRoles: ['AI / ML Engineer', 'Software Engineer'],
-        targetRole: 'AI / ML Engineer',
-        dreamCompany: 'NVIDIA',
-        goal: 'Campus Placement / Full-time',
-        timeline: '1 year',
-        preferredLocation: 'India',
-      },
-      learningPreferences: {
-        methods: ['Building real projects', 'Hands-on coding', 'Practice problems & DSA'],
-        dailyStudyTime: '2–3 hours',
-        preferredStudyTime: 'Evening (Dedicated study block)',
-        workingStyle: 'Mix of both',
-        reminderPreference: 'Regular reminders',
-      },
-      careerTwin: {
-        currentLevel: 'Undergraduate Explorer',
-        strengths: [],
-        weaknesses: [],
-        skillGaps: [],
-        readinessScore: null,
-        consistencyScore: null,
-        status: 'ready',
-        lastUpdated: new Date().toISOString()
-      }
-    });
-    setCurrentScreen('dashboard');
-  };
 
   return (
     <OnboardingContext.Provider
@@ -714,8 +714,8 @@ export const OnboardingProvider: React.FC<{ children: React.ReactNode }> = ({ ch
         goToStep,
         resetAll,
         completeOnboarding,
-        loginAsDemoUser,
         loginWithEmail,
+        createAccount,
         syncToDatabase,
         isSyncing,
         isAuthenticating,

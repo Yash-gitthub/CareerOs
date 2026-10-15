@@ -164,7 +164,7 @@ export const AssessmentFlow: React.FC<AssessmentFlowProps> = ({ variant, onClose
       skillChecks,
     };
     submitAssessment(res, applyVerification(user.skills, skillChecks, completedAt));
-    recordAssessmentResult({ userId: user.id, targetRole: user.career.targetRole, score: answers.filter(a => a.correct).length, totalQuestions: answers.length });
+    recordAssessmentResult({ userId: user.id, targetRole: user.career.targetRole, score: answers.filter(a => a.correct).length, totalQuestions: answers.length, result: res });
     try {
       localStorage.removeItem(draftKey(user.id));
     } catch {

@@ -46,7 +46,7 @@ export const Step7Review: React.FC = () => {
                   {user.fullName || 'Student Explorer'}
                 </h3>
                 <p className="text-xs text-slate-500">
-                  {user.email || 'student@engineering.edu'} • {user.phone || 'No phone'}
+                  {user.email}{user.phone ? ` • ${user.phone}` : ''}
                 </p>
               </div>
             </div>
